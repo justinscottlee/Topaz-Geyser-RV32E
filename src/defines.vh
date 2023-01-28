@@ -10,3 +10,9 @@
 `define ALU_SRA 4'b1101
 `define ALU_OR  4'b0110
 `define ALU_AND 4'b0111
+
+// BRANCH CONDITIONS
+`define BRANCH_ALU_ZERO     2'b00
+`define BRANCH_ALU_NONZERO  2'b01
+`define BRANCH_FORCE_FALSE  2'b10
+`define BRANCH_FORCE_TRUE   2'b11
