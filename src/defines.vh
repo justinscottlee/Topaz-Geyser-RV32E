@@ -16,3 +16,10 @@
 `define BRANCH_ALU_NONZERO  2'b01
 `define BRANCH_FORCE_FALSE  2'b10
 `define BRANCH_FORCE_TRUE   2'b11
+
+// IMMEDIATE SELECT
+`define IMM_SEL_I 3'b000
+`define IMM_SEL_S 3'b001
+`define IMM_SEL_B 3'b010
+`define IMM_SEL_U 3'b011
+`define IMM_SEL_J 3'b100
