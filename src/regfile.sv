@@ -3,8 +3,8 @@
 module regfile(
     input logic clk, rst, we,
     input logic [3:0] rs1, rs2, rd,
-    input logic [31:0] rd_data,
-    output logic [31:0] rs1_data, rs2_data
+    input integer rd_data,
+    output integer rs1_data, rs2_data
     );
     
     integer regfile[1:15];
