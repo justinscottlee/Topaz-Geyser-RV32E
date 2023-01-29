@@ -1,2 +1,2 @@
 # Topaz-Geyser-RV32E
-Pipelined RV32I core written in SystemVerilog.
+Pipelined RV32E core written in SystemVerilog.
