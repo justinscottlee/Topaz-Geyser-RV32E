@@ -1,13 +1,13 @@
 `timescale 1ns / 1ps
 
-module tb_memory_group;
+module tb_single_port_memory_group;
 
 logic clk;
 logic [3:0] write_mask;
 logic [13:0] addr;
 integer write_data, read_data;
 
-memory_group dut (clk, write_mask, addr, write_data, read_data);
+single_port_memory_group dut (clk, write_mask, addr, write_data, read_data);
 
 always #1 clk = ~clk;
 

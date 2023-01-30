@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module memory_group #(
+module single_port_memory_group #(
     parameter DATA_DEPTH = 4096
     )(
     input logic clk,
@@ -13,8 +13,11 @@ module memory_group #(
     logic [1:0] bank_base;
     logic [$clog2(DATA_DEPTH)-1:0] bank_addr;
     
-    assign bank_base = addr % 4; // RISC-V allows misaligned address accesses, so this calculates the memory bank the data starts at.
-    assign bank_addr = addr >> 2; // RISC-V instruction address is byte-addressed, whereas the physical memory is word-addressed, so we divide by 4 bytes/word.
+    // RISC-V allows misaligned address accesses, so this calculates the memory bank the data starts at.
+    assign bank_base = addr % 4;
+    
+    // RISC-V instruction address is byte-addressed, whereas the physical memory is word-addressed, so we divide by 4 bytes/word.
+    assign bank_addr = addr >> 2;
     
     // We need to keep the software interpretation of the write-mask aligned with the hardware banks.
     logic bank0_we, bank1_we, bank2_we, bank3_we;
@@ -33,10 +36,10 @@ module memory_group #(
     byte bank0_write_data, bank1_write_data, bank2_write_data, bank3_write_data;
     byte bank0_read_data, bank1_read_data, bank2_read_data, bank3_read_data;
     
-    memory_bank #(.DATA_DEPTH(DATA_DEPTH)) bank0 (.clk(clk), .we(bank0_we), .addr(bank0_addr), .write_data(bank0_write_data), .read_data(bank0_read_data));
-    memory_bank #(.DATA_DEPTH(DATA_DEPTH)) bank1 (.clk(clk), .we(bank1_we), .addr(bank1_addr), .write_data(bank1_write_data), .read_data(bank1_read_data));
-    memory_bank #(.DATA_DEPTH(DATA_DEPTH)) bank2 (.clk(clk), .we(bank2_we), .addr(bank2_addr), .write_data(bank2_write_data), .read_data(bank2_read_data));
-    memory_bank #(.DATA_DEPTH(DATA_DEPTH)) bank3 (.clk(clk), .we(bank3_we), .addr(bank3_addr), .write_data(bank3_write_data), .read_data(bank3_read_data));
+    single_port_memory_bank #(.DATA_DEPTH(DATA_DEPTH)) bank0 (.clk(clk), .we(bank0_we), .addr(bank0_addr), .write_data(bank0_write_data), .read_data(bank0_read_data));
+    single_port_memory_bank #(.DATA_DEPTH(DATA_DEPTH)) bank1 (.clk(clk), .we(bank1_we), .addr(bank1_addr), .write_data(bank1_write_data), .read_data(bank1_read_data));
+    single_port_memory_bank #(.DATA_DEPTH(DATA_DEPTH)) bank2 (.clk(clk), .we(bank2_we), .addr(bank2_addr), .write_data(bank2_write_data), .read_data(bank2_read_data));
+    single_port_memory_bank #(.DATA_DEPTH(DATA_DEPTH)) bank3 (.clk(clk), .we(bank3_we), .addr(bank3_addr), .write_data(bank3_write_data), .read_data(bank3_read_data));
     
     always_comb begin
         case (bank_base)
@@ -45,29 +48,34 @@ module memory_group #(
             bank1_write_data = write_data[15:8];
             bank2_write_data = write_data[23:16];
             bank3_write_data = write_data[31:24];
-            read_data = {bank3_read_data, bank2_read_data, bank1_read_data, bank0_read_data};
         end
         2'd1: begin
             bank1_write_data = write_data[7:0];
             bank2_write_data = write_data[15:8];
             bank3_write_data = write_data[23:16];
             bank0_write_data = write_data[31:24];
-            read_data = {bank0_read_data, bank3_read_data, bank2_read_data, bank1_read_data};
         end
         2'd2: begin
             bank2_write_data = write_data[7:0];
             bank3_write_data = write_data[15:8];
             bank0_write_data = write_data[23:16];
             bank1_write_data = write_data[31:24];
-            read_data = {bank1_read_data, bank0_read_data, bank3_read_data, bank2_read_data};
         end
         2'd3: begin
             bank3_write_data = write_data[7:0];
             bank0_write_data = write_data[15:8];
             bank1_write_data = write_data[23:16];
             bank2_write_data = write_data[31:24];
-            read_data = {bank2_read_data, bank1_read_data, bank0_read_data, bank3_read_data};
         end
+        endcase
+    end
+    
+    always_ff @ (posedge clk) begin
+        case (bank_base)
+        2'd0: read_data <= {bank3_read_data, bank2_read_data, bank1_read_data, bank0_read_data};
+        2'd1: read_data <= {bank0_read_data, bank3_read_data, bank2_read_data, bank1_read_data};
+        2'd2: read_data <= {bank1_read_data, bank0_read_data, bank3_read_data, bank2_read_data};
+        2'd3: read_data <= {bank2_read_data, bank1_read_data, bank0_read_data, bank3_read_data};
         endcase
     end
 endmodule
