@@ -10,12 +10,13 @@ module single_port_memory_bank #(
     );
     
     byte mem [0:DATA_DEPTH-1];
-    
-    assign read_data = mem[addr];
 
     always_ff @ (posedge clk) begin
         if (we) begin
             mem[addr] <= write_data;
+        end
+        else begin
+            read_data <= mem[addr];
         end
     end
 endmodule
