@@ -11,6 +11,16 @@
 `define ALU_OR  4'b0110
 `define ALU_AND 4'b0111
 
+`define ALU_A_SEL_RS1   1'b0
+`define ALU_A_SEL_PC    1'b1
+`define ALU_B_SEL_IMM   1'b0
+`define ALU_B_SEL_RS2   1'b1
+
+`define RD_DATA_SEL_ALU 2'b00
+`define RD_DATA_SEL_PC4 2'b01
+`define RD_DATA_SEL_LSU 2'b10
+`define RD_DATA_SEL_IMM 2'b11
+
 // BRANCH CONDITIONS
 `define BRANCH_ALU_ZERO     2'b00
 `define BRANCH_ALU_NONZERO  2'b01
@@ -75,3 +85,7 @@
     `define FUNCT3_AND      3'b111
 `define OPCODE_FENCE    7'b0001111
 `define OPCODE_ECALL    7'b1110011
+
+`define DATAWIDTH_BYTE  2'b00
+`define DATAWIDTH_SHORT 2'b01
+`define DATAWIDTH_WORD  2'b10

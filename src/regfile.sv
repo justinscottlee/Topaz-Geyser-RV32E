@@ -9,10 +9,8 @@ module regfile(
     
     integer regfile[1:15];
     
-    always_comb begin
-        rs1_data = (rs1 == 0) ? 32'b0 : regfile[rs1];
-        rs2_data = (rs2 == 0) ? 32'b0 : regfile[rs2];
-    end
+    assign rs1_data = (rs1 == 0) ? 32'b0 : regfile[rs1];
+    assign rs2_data = (rs2 == 0) ? 32'b0 : regfile[rs2];
     
     always_ff @ (posedge clk) begin
         if (rst) begin
@@ -20,8 +18,10 @@ module regfile(
                 regfile[i] <= 32'b0;
             end
         end
-        else if (we) begin
-            regfile[rd] <= rd_data;
+        else begin
+            if (we) begin
+                regfile[rd] <= rd_data;
+            end
         end
     end
 endmodule

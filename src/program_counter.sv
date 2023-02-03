@@ -1,9 +1,9 @@
 `timescale 1ns / 1ps
 
 module program_counter(
-    input logic clk, rst, we,
+    input logic clk, rst, we, stall,
     input integer write_addr,
-    output integer pc4, pc0
+    output integer pc0, pc4
     );
     
     integer pc;
@@ -16,11 +16,13 @@ module program_counter(
             pc <= 32'd0;
         end
         else begin
-            if (we) begin
-                pc <= write_addr;
-            end
-            else begin
-                pc <= pc4;
+            if (!stall) begin
+                if (we) begin
+                    pc <= write_addr;
+                end
+                else begin
+                    pc <= pc4;
+                end
             end
         end
     end
