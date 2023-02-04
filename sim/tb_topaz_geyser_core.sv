@@ -4,19 +4,17 @@ module tb_topaz_geyser_core;
 
     logic clk, rst;
     
-    topaz_geyser_core dut(clk, rst);
+    topaz_geyser_core dut(.clk_in(clk), .rst_in(rst));
     
     always #1 clk = ~clk;
     
     initial begin
         clk = 1'b0;
         rst = 1'b1;
-        #1;
-        #2;
+        #10;
         rst = 1'b0;
         
-        
-        #40;
+        #15000;
         $finish;
     end
 endmodule

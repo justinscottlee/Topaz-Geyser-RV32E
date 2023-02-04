@@ -6,22 +6,20 @@ module program_counter(
     output integer pc0, pc4
     );
     
-    integer pc;
-    
-    assign pc0 = pc;
-    assign pc4 = pc + 32'd4;
-    
     always_ff @ (posedge clk) begin
         if (rst) begin
-            pc <= 32'd0;
+            pc0 <= 32'd0;
+            pc4 <= 32'd4;
         end
         else begin
             if (!stall) begin
                 if (we) begin
-                    pc <= write_addr;
+                    pc0 <= write_addr;
+                    pc4 <= write_addr + 4;
                 end
                 else begin
-                    pc <= pc4;
+                    pc0 <= pc4;
+                    pc4 <= pc4 + 4;
                 end
             end
         end
