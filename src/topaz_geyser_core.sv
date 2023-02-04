@@ -23,7 +23,7 @@ module topaz_geyser_core(
     
     logic invalid_IF; // TODO: make brancher invalidate IF
     logic stall_IF; // TODO: consider stall conditions from hazard unit
-    pipeline_register_IF_ID pr_IFID (clk, invalid_IF, stall_IF, pc0_IF, pc4_IF, invalid_ID, pc0_ID, pc4_ID);
+    pipeline_register_IF_ID pr_IFID (clk, invalid_IF, stall_IF, pc0_IF, pc4_IF, pc0_ID, pc4_ID);
     logic invalid_ID;
     integer pc0_ID, pc4_ID;
     
@@ -42,12 +42,68 @@ module topaz_geyser_core(
     logic regfile_we_WB;
     logic [3:0] rd_WB;
     integer rd_data; // TODO: connect to a mux4 that is connected to all the sources needed (lives in WB)
+    
     regfile regfile (clk, rst, regfile_we_WB, rs1, rs2, rd_WB, alu_result_WB/*rd_data*/, rs1_data_ID, rs2_data_ID); // TODO: verify rs1_data and rs2_data live in EX from this output (it may be ID)
     integer rs1_data_ID; // TODO: pipeline wherever needed
     integer rs2_data_ID; // TODO: pipeline wherever needed
     
+    integer rs1_data_ID_PASS;
+    integer rs2_data_ID_PASS;
+    logic rs1_data_forwarded, rs2_data_forwarded;
+    
+    always_comb begin
+        if (regfile_we_EX & (rs1 == rd_EX)) begin
+            rs2_data_forwarded = 1'b1;
+            rs1_data_ID_PASS = alu_result_EX;
+        end
+        else if (regfile_we_MEMPREP & (rs1 == rd_MEMPREP)) begin
+            rs1_data_forwarded = 1'b1;
+            rs1_data_ID_PASS = alu_result_MEMPREP;
+        end
+        else if (regfile_we_MEMEX & (rs1 == rd_MEMEX)) begin
+            rs1_data_forwarded = 1'b1;
+            rs1_data_ID_PASS = alu_result_MEMEX;
+        end
+        else if (regfile_we_WB & (rs1 == rd_WB)) begin
+            rs1_data_forwarded = 1'b1;
+            rs1_data_ID_PASS = alu_result_WB;
+        end
+        else begin
+            rs1_data_forwarded = 1'b0;
+            rs1_data_ID_PASS = rs1_data_ID;
+        end
+        
+        if (regfile_we_EX & (rs2 == rd_EX)) begin
+            rs2_data_forwarded = 1'b1;
+            rs2_data_ID_PASS = alu_result_EX;
+            
+            /*
+            case (rd_data_sel_EX) begin
+            `RD_DATA_SEL_ALU: ...
+            `RD_DATA_SEL_LSU: ...
+            end
+            */
+        end
+        else if (regfile_we_MEMPREP & (rs2 == rd_MEMPREP)) begin
+            rs2_data_forwarded = 1'b1;
+            rs2_data_ID_PASS = alu_result_MEMPREP;
+        end
+        else if (regfile_we_MEMEX & (rs2 == rd_MEMEX)) begin
+            rs2_data_forwarded = 1'b1;
+            rs2_data_ID_PASS = alu_result_MEMEX;
+        end
+        else if (regfile_we_WB & (rs2 == rd_WB)) begin
+            rs2_data_forwarded = 1'b1;
+            rs2_data_ID_PASS = alu_result_WB;
+        end
+        else begin
+            rs2_data_forwarded = 1'b0;
+            rs2_data_ID_PASS = rs2_data_ID;
+        end
+    end
+    
     logic stall_ID; // TODO: consider stall conditions from hazard unit
-    pipeline_register_ID_EX pr_IDEX (clk, invalid_ID, stall_ID, pc0_ID, pc4_ID, rd_ID, alu_operation_ID, regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID, immediate_ID, rs1_data_ID, rs2_data_ID, invalid_EX, pc0_EX, pc4_EX, rd_EX, alu_operation_EX, regfile_we_EX, alu_a_sel_EX, alu_b_sel_EX, immediate_EX, rs1_data_EX, rs2_data_EX);
+    pipeline_register_ID_EX pr_IDEX (clk, invalid_ID, stall_ID, pc0_ID, pc4_ID, rd_ID, alu_operation_ID, regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID, immediate_ID, rs1_data_ID_PASS, rs2_data_ID_PASS, pc0_EX, pc4_EX, rd_EX, alu_operation_EX, regfile_we_EX, alu_a_sel_EX, alu_b_sel_EX, immediate_EX, rs1_data_EX, rs2_data_EX);
     logic invalid_EX; // TODO: attch to EX_MEMPREP pr
     integer pc0_EX, pc4_EX; // TODO: pipeline to MEMPREP? doublecheck
     logic [3:0] rd_EX;
@@ -67,35 +123,41 @@ module topaz_geyser_core(
     integer alu_result_EX;
     
     logic stall_EX;
-    pipeline_register_EX_MEMPREP pr_EXMEMPREP (clk, invalid_EX, stall_EX, rd_EX, alu_result_EX, regfile_we_EX, invalid_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP);
+    pipeline_register_EX_MEMPREP pr_EXMEMPREP (clk, invalid_EX, stall_EX, rd_EX, alu_result_EX, regfile_we_EX, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP);
     logic invalid_MEMPREP;
     logic [3:0] rd_MEMPREP;
     integer alu_result_MEMPREP;
     logic regfile_we_MEMPREP;
     
     logic stall_MEMPREP;
-    pipeline_register_MEMPREP_MEMEX pr_MEMPREPMEMEX (clk, invalid_MEMPREP, stall_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, invalid_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX);
+    pipeline_register_MEMPREP_MEMEX pr_MEMPREPMEMEX (clk, invalid_MEMPREP, stall_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX);
     logic invalid_MEMEX;
     logic [3:0] rd_MEMEX;
     integer alu_result_MEMEX;
     logic regfile_we_MEMEX;
     
     logic stall_MEMEX;
-    pipeline_register_MEMEX_WB pr_MEMEXWB (clk, invalid_MEMEX, stall_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, invalid_WB, rd_WB, alu_result_WB, regfile_we_WB);
+    pipeline_register_MEMEX_WB pr_MEMEXWB (clk, invalid_MEMEX, stall_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_WB, alu_result_WB, regfile_we_WB);
     logic invalid_WB;
     integer alu_result_WB;
     
     //mux4 mux_rd_data ();
     assign stall_program_counter = stall_IF;
+    assign stall_IF = stall_ID;
     always_comb begin
-        logic signal = ((rs1 == rd_EX | rs2 == rd_EX) & regfile_we_EX) | ((rs1 == rd_MEMPREP | rs2 == rd_MEMPREP) & regfile_we_MEMPREP) | ((rs1 == rd_MEMEX | rs2 == rd_MEMEX) & regfile_we_MEMEX) | ((rs1 == rd_WB | rs2 == rd_WB) & regfile_we_WB);
+        logic signal = ~rs1_data_forwarded & ~rs2_data_forwarded & (((rs1 == rd_EX | rs2 == rd_EX) & regfile_we_EX) | ((rs1 == rd_MEMPREP | rs2 == rd_MEMPREP) & regfile_we_MEMPREP) | ((rs1 == rd_MEMEX | rs2 == rd_MEMEX) & regfile_we_MEMEX) | ((rs1 == rd_WB | rs2 == rd_WB) & regfile_we_WB));
         case (signal)
-        1'b1:       stall_IF = 1'b1;
-        1'b0:       stall_IF = 1'b0;
-        default:    stall_IF = 1'b0;
+        1'b1: begin
+            stall_ID = 1'b1;
+        end
+        1'b0: begin
+            stall_ID = 1'b0;
+        end
+        default: begin
+            stall_ID = 1'b0;
+        end
         endcase
     end
-    assign stall_ID = stall_EX;
     assign stall_EX = stall_MEMPREP;
     assign stall_MEMPREP = stall_MEMEX;
     assign stall_MEMEX = 1'b0;
