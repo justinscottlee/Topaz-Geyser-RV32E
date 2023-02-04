@@ -31,14 +31,9 @@ module topaz_geyser_core(
     pipeline_register_IF_ID pr_IF_ID (clk, invalid_IF, stall_IF, pc0_IF, pc4_IF, instruction_IF, pc0_ID, pc4_ID, instruction_ID);
     integer pc0_ID, pc4_ID, instruction_ID;
     // ID-STAGE
-    logic [2:0] imm_sel_ID;
-    decoder decoder (instruction_ID, imm_sel_ID, funct7_ID, rs2, rs1, rd_ID, funct3_ID, opcode_ID, immediate_ID);
-    logic [6:0] funct7_ID;
-    logic [3:0] rs2, rs1, rd_ID;
-    logic [2:0] funct3_ID;
-    logic [6:0] opcode_ID;
+    control_unit control_unit (instruction_ID, immediate_ID, rd_ID, rs1, rs2, alu_operation_ID, regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID);
     integer immediate_ID;
-    control_unit control_unit (funct7_ID, funct3_ID, opcode_ID, imm_sel_ID, alu_operation_ID, regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID);
+    logic [3:0] rd_ID, rs1, rs2;
     logic [3:0] alu_operation_ID;
     logic regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID;
     logic regfile_we_WB;

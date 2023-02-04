@@ -3,16 +3,37 @@
 `include "defines.vh"
 
 module control_unit(
-    input logic [6:0] funct7,
-    input logic [2:0] funct3,
-    input logic [6:0] opcode,
-    
-    output logic [2:0] imm_sel,
+    input integer instruction,
+    output integer immediate,
+    output logic [3:0] rd, rs1, rs2,
     output logic [3:0] alu_operation,
     output logic regfile_we, alu_a_sel, alu_b_sel
     );
     
+    integer imm_I, imm_S, imm_B, imm_U, imm_J;
+    assign imm_I = {{20{instruction[31]}}, instruction[31:20]};
+    assign imm_S = {{20{instruction[31]}}, instruction[31:25], instruction[11:7]};
+    assign imm_B = {{20{instruction[31]}}, instruction[7], instruction[30:25], instruction[11:8], 1'b0};
+    assign imm_U = {instruction[31:12], 12'b0};
+    assign imm_J = {{12{instruction[31]}}, instruction[19:12], instruction[20], instruction[30:21], 1'b0};
+    
+    logic [6:0] opcode;
+    logic [2:0] funct3;
+    logic [6:0] funct7;
+    assign opcode = instruction[6:0];
+    assign funct3 = instruction[14:12];
+    assign funct7 = instruction[31:25];
+
+    assign rd = instruction[11:7];
+    assign rs1 = instruction[19:15];
+    assign rs2 = instruction[24:20];
+    
     always_comb begin
+    immediate = imm_I;
+    alu_operation = `ALU_ADD;
+    regfile_we = 1'b0;
+    alu_a_sel = `ALU_A_SEL_RS1;
+    alu_b_sel = `ALU_B_SEL_IMM;
     case (opcode)
     `OPCODE_LUI: begin
         
@@ -81,7 +102,7 @@ module control_unit(
         endcase
     end
     `OPCODE_OP_IMM: begin
-        imm_sel = `IMM_SEL_I;
+        immediate = imm_I;
         alu_operation = {funct7[5], funct3};
         alu_a_sel = `ALU_A_SEL_RS1;
         alu_b_sel = `ALU_B_SEL_IMM;
