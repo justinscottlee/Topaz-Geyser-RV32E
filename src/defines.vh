@@ -27,13 +27,6 @@
 `define BRANCH_FORCE_FALSE  2'b10
 `define BRANCH_FORCE_TRUE   2'b11
 
-// IMMEDIATE SELECT
-`define IMM_SEL_I 3'b000
-`define IMM_SEL_S 3'b001
-`define IMM_SEL_B 3'b010
-`define IMM_SEL_U 3'b011
-`define IMM_SEL_J 3'b100
-
 // RISC-V OPCODES/FUNCT3s/FUNCT7s
 `define OPCODE_LUI      7'b0110111
 `define OPCODE_AUIPC    7'b0010111
