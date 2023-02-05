@@ -6,11 +6,13 @@ module pipeline_register_ID_EX(
     input logic [3:0] rd_ID, alu_operation_ID,
     input logic regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID,
     input integer immediate_ID, rs1_data_ID, rs2_data_ID,
+    input logic [1:0] branch_condition_ID,
     
     output integer pc0_EX, pc4_EX, 
     output logic [3:0] rd_EX, alu_operation_EX,
     output logic regfile_we_EX, alu_a_sel_EX, alu_b_sel_EX,
-    output integer immediate_EX, rs1_data_EX, rs2_data_EX
+    output integer immediate_EX, rs1_data_EX, rs2_data_EX,
+    output logic [1:0] branch_condition_EX
     );
     
     always @ (posedge clk) begin
@@ -25,6 +27,7 @@ module pipeline_register_ID_EX(
             immediate_EX <= immediate_ID;
             rs1_data_EX <= rs1_data_ID;
             rs2_data_EX <= rs2_data_ID;
+            branch_condition_EX <= branch_condition_ID;
         end
         
         if (stall | invalid_ID) begin
