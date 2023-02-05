@@ -8,7 +8,8 @@ module control_unit(
     output logic [3:0] rd, rs1, rs2,
     output logic [3:0] alu_operation,
     output logic regfile_we, alu_a_sel, alu_b_sel,
-    output logic [1:0] branch_condition
+    output logic [1:0] branch_condition, rd_data_sel,
+    output logic branch_base_sel
     );
     
     integer imm_I, imm_S, imm_B, imm_U, imm_J;
@@ -36,6 +37,8 @@ module control_unit(
     regfile_we = 1'b0;
     alu_a_sel = `ALU_A_SEL_RS1;
     alu_b_sel = `ALU_B_SEL_IMM;
+    branch_base_sel = `BRANCH_BASE_PC0;
+    rd_data_sel = `RD_DATA_SEL_ALU;
     case (opcode)
     `OPCODE_LUI: begin
         
@@ -44,10 +47,17 @@ module control_unit(
         
     end
     `OPCODE_JAL: begin
-        
+        immediate = imm_J;
+        branch_condition = `BRANCH_FORCE_TRUE;
+        regfile_we = 1'b1;
+        rd_data_sel = `RD_DATA_SEL_PC4;
     end
     `OPCODE_JALR: begin
-        
+        immediate = imm_I;
+        branch_condition = `BRANCH_FORCE_TRUE;
+        regfile_we = 1'b1;
+        rd_data_sel = `RD_DATA_SEL_PC4;
+        branch_base_sel = `BRANCH_BASE_RS1;
     end
     `OPCODE_BRANCH: begin
         alu_b_sel = `ALU_B_SEL_RS2;
@@ -113,7 +123,7 @@ module control_unit(
     end
     `OPCODE_OP_IMM: begin
         immediate = imm_I;
-        alu_operation = {funct7[5], funct3};
+        alu_operation = {(funct3 == `FUNCT3_SRAI) ? funct7[5] : 1'b0, funct3};
         alu_a_sel = `ALU_A_SEL_RS1;
         alu_b_sel = `ALU_B_SEL_IMM;
         regfile_we = 1'b1;
