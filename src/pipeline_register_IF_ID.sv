@@ -13,7 +13,7 @@ module pipeline_register_IF_ID(
             pc4_ID <= pc4_IF;
             instruction_ID <= instruction_IF;
         end
-        else begin
+        if (stall | invalid_IF) begin
             instruction_ID <= 32'h13; // NOP
         end
     end
