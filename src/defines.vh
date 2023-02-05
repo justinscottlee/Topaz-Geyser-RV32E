@@ -27,6 +27,9 @@
 `define BRANCH_FORCE_FALSE  2'b10
 `define BRANCH_FORCE_TRUE   2'b11
 
+`define BRANCH_BASE_PC0     1'b0
+`define BRANCH_BASE_RS1     1'b1
+
 // RISC-V OPCODES/FUNCT3s/FUNCT7s
 `define OPCODE_LUI      7'b0110111
 `define OPCODE_AUIPC    7'b0010111
