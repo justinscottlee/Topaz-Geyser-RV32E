@@ -7,11 +7,11 @@ module brancher(
     input integer alu_result,
     output logic branch_taken,
     
-    input integer pc, immediate,
+    input integer branch_base, immediate,
     output integer branch_addr
     );
     
-    assign branch_addr = pc + immediate;
+    assign branch_addr = branch_base + immediate;
     
     always_comb begin
         case (branch_condition)
