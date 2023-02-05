@@ -7,7 +7,8 @@ module control_unit(
     output integer immediate,
     output logic [3:0] rd, rs1, rs2,
     output logic [3:0] alu_operation,
-    output logic regfile_we, alu_a_sel, alu_b_sel
+    output logic regfile_we, alu_a_sel, alu_b_sel,
+    output logic [1:0] branch_condition
     );
     
     integer imm_I, imm_S, imm_B, imm_U, imm_J;
@@ -30,6 +31,7 @@ module control_unit(
     
     always_comb begin
     immediate = imm_I;
+    branch_condition = `BRANCH_FORCE_FALSE;
     alu_operation = `ALU_ADD;
     regfile_we = 1'b0;
     alu_a_sel = `ALU_A_SEL_RS1;
@@ -48,24 +50,32 @@ module control_unit(
         
     end
     `OPCODE_BRANCH: begin
+        alu_b_sel = `ALU_B_SEL_RS2;
+        immediate = imm_B;
         case (funct3)
         `FUNCT3_BEQ: begin
-            
+            alu_operation = `ALU_SUB;
+            branch_condition = `BRANCH_ALU_ZERO;
         end
         `FUNCT3_BNE: begin
-            
+            alu_operation = `ALU_SUB;
+            branch_condition = `BRANCH_ALU_NONZERO;
         end
         `FUNCT3_BLT: begin
-            
+            alu_operation = `ALU_LT;
+            branch_condition = `BRANCH_ALU_NONZERO;
         end
         `FUNCT3_BGE: begin
-            
+            alu_operation = `ALU_LT;
+            branch_condition = `BRANCH_ALU_ZERO;
         end
         `FUNCT3_BLTU: begin
-            
+            alu_operation = `ALU_LTU;
+            branch_condition = `BRANCH_ALU_NONZERO;
         end
         `FUNCT3_BGEU: begin
-            
+            alu_operation = `ALU_LTU;
+            branch_condition = `BRANCH_ALU_ZERO;
         end
         endcase
     end
