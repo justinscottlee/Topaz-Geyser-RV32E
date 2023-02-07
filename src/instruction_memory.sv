@@ -11,10 +11,10 @@ module instruction_memory #(
     
     integer mem[0:DEPTH-1];
     
-    // initialize memory for testing in simulation
     initial $readmemh("instruction_memory.mem", mem);
     
     assign read_instruction_ro = mem[addr_ro >> 2];
+    
     /*
     always_ff @ (posedge clk) begin
         if (we) begin

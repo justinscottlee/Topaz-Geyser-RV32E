@@ -2,22 +2,45 @@
 
 module topaz_geyser_core(
     input logic sys_clk, cpu_rst,
-    output logic [8:0] outputreg
+    output logic [14:0] outputreg
     );
-    
+    /*
     logic clk;
-    clk_wiz_0 clk_wiz (.clk_100M(sys_clk), .reset(cpu_rst), .locked(locked), .clk_140M(clk));
-    
-    logic rst; // generate initial cpu reset signal
+    clk_wiz_0 clk_wiz (.clk_100M(sys_clk), .reset(~cpu_rst), .locked(locked), .clk_140M(clk));
+
+    logic rst;
     always_ff @ (posedge clk or posedge locked) begin
         if (locked) rst <= 1;
         if (clk) rst <= 0;
-    end
+    end*/
     
+    logic rst;
+    assign rst = ~cpu_rst;
+    
+    logic clk;
+    assign clk = sys_clk;
+
+    assign outputreg[14:8] = 7'b1111111;
+    assign outputreg[7] = 0;
     always_ff @ (posedge clk) begin
-        if (alu_result_WB[31:20] == 0) begin
-            outputreg <= alu_result_WB[8:0];
-        end
+        case (alu_result_WB[3:0])
+        'h0: outputreg[6:0] <= 7'b0000001;
+        'h1: outputreg[6:0] <= 7'b1001111;
+        'h2: outputreg[6:0] <= 7'b0010010;
+        'h3: outputreg[6:0] <= 7'b0000110;
+        'h4: outputreg[6:0] <= 7'b1001100;
+        'h5: outputreg[6:0] <= 7'b0100100;
+        'h6: outputreg[6:0] <= 7'b0100000;
+        'h7: outputreg[6:0] <= 7'b0001111;
+        'h8: outputreg[6:0] <= 7'b0000000;
+        'h9: outputreg[6:0] <= 7'b0000100;
+        'hA: outputreg[6:0] <= 7'b0001000;
+        'hB: outputreg[6:0] <= 7'b1100000;
+        'hC: outputreg[6:0] <= 7'b0110001;
+        'hD: outputreg[6:0] <= 7'b1000010;
+        'hE: outputreg[6:0] <= 7'b0110000;
+        'hF: outputreg[6:0] <= 7'b0111000;
+        endcase
     end
     
     logic stall;
@@ -29,7 +52,7 @@ module topaz_geyser_core(
     integer instruction_IF;
     
     // PIPELINE WALL COMMENT -- IF-ID BOUNDARY
-    pipeline_register_IF_ID pr_IF_ID (clk, branch_taken, stall, pc0_IF, pc4_IF, instruction_IF, pc0_ID, pc4_ID, instruction_ID, invalid_ID);
+    pipeline_register_IF_ID pr_IF_ID (clk, branch_taken | rst, stall, pc0_IF, pc4_IF, instruction_IF, pc0_ID, pc4_ID, instruction_ID, invalid_ID);
     logic invalid_ID;
     integer pc0_ID, pc4_ID, instruction_ID;
     // ID-STAGE
@@ -47,7 +70,7 @@ module topaz_geyser_core(
     logic rs1_data_forwarded, rs2_data_forwarded;
     
     // PIPELINE WALL COMMENT -- ID-EX BOUNDARY
-    pipeline_register_ID_EX pr_ID_EX (clk, branch_taken | invalid_ID, stall, pc0_ID, pc4_ID, rd_ID, alu_operation_ID, regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID, immediate_ID, rs1_data_ID, rs2_data_ID, branch_condition_ID, rd_data_sel_ID, branch_base_sel_ID, pc0_EX, pc4_EX, rd_EX, alu_operation_EX, regfile_we_EX, alu_a_sel_EX, alu_b_sel_EX, immediate_EX, rs1_data_EX, rs2_data_EX, branch_condition_EX, rd_data_sel_EX, branch_base_sel_EX, invalid_EX);
+    pipeline_register_ID_EX pr_ID_EX (clk, branch_taken | invalid_ID | rst, stall, pc0_ID, pc4_ID, rd_ID, alu_operation_ID, regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID, immediate_ID, rs1_data_ID, rs2_data_ID, branch_condition_ID, rd_data_sel_ID, branch_base_sel_ID, pc0_EX, pc4_EX, rd_EX, alu_operation_EX, regfile_we_EX, alu_a_sel_EX, alu_b_sel_EX, immediate_EX, rs1_data_EX, rs2_data_EX, branch_condition_EX, rd_data_sel_EX, branch_base_sel_EX, invalid_EX);
     logic invalid_EX;
     integer pc0_EX, pc4_EX;
     logic [3:0] rd_EX, alu_operation_EX;
@@ -64,12 +87,12 @@ module topaz_geyser_core(
     
     mux2 mux_branch_base (branch_base_sel_EX, pc0_EX, rs1_data_EX, branch_base);
     integer branch_base;
-    brancher brancher (branch_condition_EX, alu_result_EX, branch_taken, branch_base, immediate_EX, branch_addr);
+    brancher brancher (clk, branch_taken | rst, branch_condition_EX, alu_result_EX, branch_taken, branch_base, immediate_EX, branch_addr);
     logic branch_taken;
     integer branch_addr;
     
     // PIPELINE WALL COMMENT -- EX-MEMPREP BOUNDARY
-    pipeline_register_EX_MEMPREP pr_EX_MEMPREP (clk, invalid_EX, pc4_EX, rd_EX, alu_result_EX, regfile_we_EX, rd_data_sel_EX, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, invalid_MEMPREP);
+    pipeline_register_EX_MEMPREP pr_EX_MEMPREP (clk, branch_taken | invalid_EX | rst, pc4_EX, rd_EX, alu_result_EX, regfile_we_EX, rd_data_sel_EX, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, invalid_MEMPREP);
     logic invalid_MEMPREP;
     integer pc4_MEMPREP;
     logic [3:0] rd_MEMPREP;
@@ -80,7 +103,7 @@ module topaz_geyser_core(
     // MEMPREP-STAGE
     
     // PIPELINE WALL COMMENT -- MEMPREP-MEMEX BOUNDARY
-    pipeline_register_MEMPREP_MEMEX pr_MEMPREP_MEMEX (clk, invalid_MEMPREP, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, invalid_MEMEX);
+    pipeline_register_MEMPREP_MEMEX pr_MEMPREP_MEMEX (clk, invalid_MEMPREP | rst, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, invalid_MEMEX);
     logic invalid_MEMEX;
     integer pc4_MEMEX;
     logic [3:0] rd_MEMEX;
@@ -90,7 +113,7 @@ module topaz_geyser_core(
     // MEMEX-STAGE
     
     // PIPELINE WALL COMMENT -- MEMEX-WB BOUNDARY
-    pipeline_register_MEMEX_WB pr_MEMEX_WB (clk, invalid_MEMEX, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, pc4_WB, rd_WB, alu_result_WB, regfile_we_WB, rd_data_sel_WB, invalid_WB);
+    pipeline_register_MEMEX_WB pr_MEMEX_WB (clk, invalid_MEMEX | rst, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, pc4_WB, rd_WB, alu_result_WB, regfile_we_WB, rd_data_sel_WB, invalid_WB);
     logic invalid_WB;
     integer pc4_WB;
     logic [3:0] rd_WB;
@@ -108,12 +131,5 @@ module topaz_geyser_core(
         0: stall = 0;
         default: stall = 0;
         endcase
-    end
-    
-    // test output to prevent synthesizer from optimizing away the cpu
-    always_ff @ (posedge clk) begin
-        //if (alu_result_WB[31:26] == 0) begin
-            //outputreg = alu_result_WB[8:0];
-        //end
     end
 endmodule
