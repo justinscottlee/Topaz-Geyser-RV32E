@@ -2,7 +2,7 @@
 
 module topaz_geyser_core(
     input logic sys_clk, cpu_rst,
-    output logic [14:0] outputreg
+    output logic [14:0] seven_segment_control_field
     );
     /*
     logic clk;
@@ -13,36 +13,21 @@ module topaz_geyser_core(
         if (locked) rst <= 1;
         if (clk) rst <= 0;
     end*/
-    
+
     logic rst;
     assign rst = ~cpu_rst;
     
-    logic clk;
-    assign clk = sys_clk;
-
-    assign outputreg[14:8] = 7'b1111111;
-    assign outputreg[7] = 0;
-    always_ff @ (posedge clk) begin
-        case (alu_result_WB[3:0])
-        'h0: outputreg[6:0] <= 7'b0000001;
-        'h1: outputreg[6:0] <= 7'b1001111;
-        'h2: outputreg[6:0] <= 7'b0010010;
-        'h3: outputreg[6:0] <= 7'b0000110;
-        'h4: outputreg[6:0] <= 7'b1001100;
-        'h5: outputreg[6:0] <= 7'b0100100;
-        'h6: outputreg[6:0] <= 7'b0100000;
-        'h7: outputreg[6:0] <= 7'b0001111;
-        'h8: outputreg[6:0] <= 7'b0000000;
-        'h9: outputreg[6:0] <= 7'b0000100;
-        'hA: outputreg[6:0] <= 7'b0001000;
-        'hB: outputreg[6:0] <= 7'b1100000;
-        'hC: outputreg[6:0] <= 7'b0110001;
-        'hD: outputreg[6:0] <= 7'b1000010;
-        'hE: outputreg[6:0] <= 7'b0110000;
-        'hF: outputreg[6:0] <= 7'b0111000;
-        endcase
+    logic clk = 0;
+    logic [16:0] clock_division_counter = 0;
+    always_ff @ (posedge sys_clk) begin
+        clock_division_counter <= clock_division_counter + 1;
+        if (clock_division_counter == 0) begin
+            clk = ~clk;
+        end
     end
-    
+
+    seven_segment_display_controller seven_segment_display_controller (sys_clk, alu_result_EX, seven_segment_control_field);
+
     logic stall;
     
     program_counter program_counter (.clk(clk), .rst(rst), .we(branch_taken), .stall(stall), .write_addr(branch_addr), .pc0(pc0_IF), .pc4(pc4_IF));
