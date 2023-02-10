@@ -15,8 +15,6 @@ module single_port_memory_bank #(
         if (we) begin
             mem[addr] <= write_data;
         end
-        else begin
-            read_data <= mem[addr];
-        end
+        read_data <= mem[addr];
     end
 endmodule

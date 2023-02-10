@@ -39,65 +39,67 @@ module single_port_memory_group #(
     single_port_memory_bank #(.DATA_DEPTH(DATA_DEPTH)) bank2 (.clk(clk), .we(bank2_we), .addr(bank2_addr), .write_data(bank2_write_data), .read_data(bank2_read_data));
     single_port_memory_bank #(.DATA_DEPTH(DATA_DEPTH)) bank3 (.clk(clk), .we(bank3_we), .addr(bank3_addr), .write_data(bank3_write_data), .read_data(bank3_read_data));
     
-    always_ff @ (posedge clk) begin
-        bank_base_MEMEX <= bank_base_MEMPREP;
-        bank_base_WB <= bank_base_MEMEX;
-    
-        if (we) begin
+    always_comb begin
+    if (we) begin
             case (data_width)
             `DATAWIDTH_BYTE: begin
-                bank0_we <= (bank_base_MEMPREP % 4) == 0;
-                bank1_we <= (bank_base_MEMPREP % 4) == 1;
-                bank2_we <= (bank_base_MEMPREP % 4) == 2;
-                bank3_we <= (bank_base_MEMPREP % 4) == 3;
+                bank0_we = (bank_base_MEMPREP % 4) == 0;
+                bank1_we = (bank_base_MEMPREP % 4) == 1;
+                bank2_we = (bank_base_MEMPREP % 4) == 2;
+                bank3_we = (bank_base_MEMPREP % 4) == 3;
             end
             `DATAWIDTH_SHORT: begin
-                bank0_we <= ((bank_base_MEMPREP % 4) == 0) | ((bank_base_MEMPREP % 4) == 3);
-                bank1_we <= ((bank_base_MEMPREP % 4) == 1) | ((bank_base_MEMPREP % 4) == 0);
-                bank2_we <= ((bank_base_MEMPREP % 4) == 2) | ((bank_base_MEMPREP % 4) == 1);
-                bank3_we <= ((bank_base_MEMPREP % 4) == 3) | ((bank_base_MEMPREP % 4) == 2);
+                bank0_we = ((bank_base_MEMPREP % 4) == 0) | ((bank_base_MEMPREP % 4) == 3);
+                bank1_we = ((bank_base_MEMPREP % 4) == 1) | ((bank_base_MEMPREP % 4) == 0);
+                bank2_we = ((bank_base_MEMPREP % 4) == 2) | ((bank_base_MEMPREP % 4) == 1);
+                bank3_we = ((bank_base_MEMPREP % 4) == 3) | ((bank_base_MEMPREP % 4) == 2);
             end
             `DATAWIDTH_WORD: begin
-                bank0_we <= 1'b1;
-                bank1_we <= 1'b1;
-                bank2_we <= 1'b1;
-                bank3_we <= 1'b1;
+                bank0_we = 1'b1;
+                bank1_we = 1'b1;
+                bank2_we = 1'b1;
+                bank3_we = 1'b1;
             end
             endcase
             
             case (bank_base_MEMPREP)
             2'd0: begin
-                bank0_write_data <= write_data[7:0];
-                bank1_write_data <= write_data[15:8];
-                bank2_write_data <= write_data[23:16];
-                bank3_write_data <= write_data[31:24];
+                bank0_write_data = write_data[7:0];
+                bank1_write_data = write_data[15:8];
+                bank2_write_data = write_data[23:16];
+                bank3_write_data = write_data[31:24];
             end
             2'd1: begin
-                bank1_write_data <= write_data[7:0];
-                bank2_write_data <= write_data[15:8];
-                bank3_write_data <= write_data[23:16];
-                bank0_write_data <= write_data[31:24];
+                bank1_write_data = write_data[7:0];
+                bank2_write_data = write_data[15:8];
+                bank3_write_data = write_data[23:16];
+                bank0_write_data = write_data[31:24];
             end
             2'd2: begin
-                bank2_write_data <= write_data[7:0];
-                bank3_write_data <= write_data[15:8];
-                bank0_write_data <= write_data[23:16];
-                bank1_write_data <= write_data[31:24];
+                bank2_write_data = write_data[7:0];
+                bank3_write_data = write_data[15:8];
+                bank0_write_data = write_data[23:16];
+                bank1_write_data = write_data[31:24];
             end
             2'd3: begin
-                bank3_write_data <= write_data[7:0];
-                bank0_write_data <= write_data[15:8];
-                bank1_write_data <= write_data[23:16];
-                bank2_write_data <= write_data[31:24];
+                bank3_write_data = write_data[7:0];
+                bank0_write_data = write_data[15:8];
+                bank1_write_data = write_data[23:16];
+                bank2_write_data = write_data[31:24];
             end
             endcase
         end 
         else begin
-            bank0_we <= 1'b0;
-            bank1_we <= 1'b0;
-            bank2_we <= 1'b0;
-            bank3_we <= 1'b0;
+            bank0_we = 1'b0;
+            bank1_we = 1'b0;
+            bank2_we = 1'b0;
+            bank3_we = 1'b0;
         end
+    end
+    
+    always_ff @ (posedge clk) begin
+        bank_base_MEMEX <= bank_base_MEMPREP;
+        bank_base_WB <= bank_base_MEMEX;
     end
     
     always_ff @ (posedge clk) begin
