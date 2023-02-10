@@ -9,7 +9,8 @@ module control_unit(
     output logic [3:0] alu_operation,
     output logic regfile_we, alu_a_sel, alu_b_sel,
     output logic [1:0] branch_condition, rd_data_sel,
-    output logic branch_base_sel
+    output logic branch_base_sel, lsu_we, lsu_sign_extend,
+    output logic [1:0] data_width
     );
     
     integer imm_I, imm_S, imm_B, imm_U, imm_J;
@@ -39,6 +40,11 @@ module control_unit(
     alu_b_sel = `ALU_B_SEL_IMM;
     branch_base_sel = `BRANCH_BASE_PC0;
     rd_data_sel = `RD_DATA_SEL_ALU;
+    
+    data_width = `DATAWIDTH_WORD;
+    lsu_sign_extend = 1;
+    lsu_we = 0;
+    
     case (opcode)
     `OPCODE_LUI: begin
         
@@ -90,34 +96,44 @@ module control_unit(
         endcase
     end
     `OPCODE_LOAD: begin
+        rd_data_sel = `RD_DATA_SEL_LSU;
+        regfile_we = 1;
+        alu_a_sel = `ALU_A_SEL_RS1;
+        alu_b_sel = `ALU_B_SEL_IMM;
         case (funct3)
         `FUNCT3_LB: begin
-            
+            data_width = `DATAWIDTH_BYTE;
         end
         `FUNCT3_LH: begin
-            
+            data_width = `DATAWIDTH_SHORT;
         end
         `FUNCT3_LW: begin
-            
+            data_width = `DATAWIDTH_WORD;
         end
         `FUNCT3_LBU: begin
-            
+            data_width = `DATAWIDTH_BYTE;
+            lsu_sign_extend = 0;
         end
         `FUNCT3_LHU: begin
-            
+            data_width = `DATAWIDTH_SHORT;
+            lsu_sign_extend = 0;
         end
         endcase
     end
     `OPCODE_STORE: begin
+        immediate = imm_S;
+        lsu_we = 1;
+        alu_a_sel = `ALU_A_SEL_RS1;
+        alu_b_sel = `ALU_B_SEL_IMM;
         case (funct3)
         `FUNCT3_SB: begin
-            
+            data_width = `DATAWIDTH_BYTE;
         end
         `FUNCT3_SH: begin
-            
+            data_width = `DATAWIDTH_SHORT;
         end
         `FUNCT3_SW: begin
-            
+            data_width = `DATAWIDTH_WORD;
         end
         endcase
     end
