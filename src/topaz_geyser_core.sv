@@ -6,7 +6,7 @@ module topaz_geyser_core(
     );
     
     logic clk;
-    clk_wiz_0 clk_wiz (.clk_100M(sys_clk), .reset(~cpu_rst), .locked(locked), .clk_140M(clk));
+    clk_wiz_0 clk_wiz (.clk_100M(sys_clk), .reset(~cpu_rst), .locked(locked), .clk_170M(clk));
 
     logic rst;
     always_ff @ (posedge clk or posedge locked) begin

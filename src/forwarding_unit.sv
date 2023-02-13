@@ -20,31 +20,47 @@ module forwarding_unit(
             rs1_data_forwarded = 1;
         end
         else if (regfile_we_EX & (rs1 == rd_EX)) begin
+            rs1_data_forwarded = 1;
             case (rd_data_sel_EX)
             `RD_DATA_SEL_ALU: rs1_data_ID = alu_result_EX;
+            default: begin
+                rs1_data_forwarded = 0;
+                rs1_data_ID = regfile_rs1_data;
+            end
             endcase
-            rs1_data_forwarded = 1;
         end
         else if (regfile_we_MEMPREP & (rs1 == rd_MEMPREP)) begin
+            rs1_data_forwarded = 1;
             case (rd_data_sel_MEMPREP)
             `RD_DATA_SEL_ALU: rs1_data_ID = alu_result_MEMPREP;
             `RD_DATA_SEL_PC4: rs1_data_ID = pc4_MEMPREP;
+            default: begin
+                rs1_data_forwarded = 0;
+                rs1_data_ID = regfile_rs1_data;
+            end
             endcase
-            rs1_data_forwarded = 1;
         end
         else if (regfile_we_MEMEX & (rs1 == rd_MEMEX)) begin
+            rs1_data_forwarded = 1;
             case (rd_data_sel_MEMEX)
             `RD_DATA_SEL_ALU: rs1_data_ID = alu_result_MEMEX;
             `RD_DATA_SEL_PC4: rs1_data_ID = pc4_MEMEX;
+            default: begin
+                rs1_data_forwarded = 0;
+                rs1_data_ID = regfile_rs1_data;
+            end
             endcase
-            rs1_data_forwarded = 1;
         end
         else if (regfile_we_WB & (rs1 == rd_WB)) begin
+            rs1_data_forwarded = 1;
             case (rd_data_sel_WB)
             `RD_DATA_SEL_ALU: rs1_data_ID = alu_result_WB;
             `RD_DATA_SEL_PC4: rs1_data_ID = pc4_WB;
+            default: begin
+                rs1_data_forwarded = 0;
+                rs1_data_ID = regfile_rs1_data;
+            end
             endcase
-            rs1_data_forwarded = 1;
         end
         else begin
             rs1_data_ID = regfile_rs1_data;
@@ -56,31 +72,47 @@ module forwarding_unit(
             rs2_data_forwarded = 1;
         end
         else if (regfile_we_EX & (rs2 == rd_EX)) begin
+            rs2_data_forwarded = 1;
             case (rd_data_sel_EX)
             `RD_DATA_SEL_ALU: rs2_data_ID = alu_result_EX;
+            default: begin
+                rs2_data_forwarded = 0;
+                rs2_data_ID = regfile_rs2_data;
+            end
             endcase
-            rs2_data_forwarded = 1;
         end
         else if (regfile_we_MEMPREP & (rs2 == rd_MEMPREP)) begin
+            rs2_data_forwarded = 1;
             case (rd_data_sel_MEMPREP)
             `RD_DATA_SEL_ALU: rs2_data_ID = alu_result_MEMPREP;
             `RD_DATA_SEL_PC4: rs2_data_ID = pc4_MEMPREP;
+            default: begin
+                rs2_data_forwarded = 0;
+                rs2_data_ID = regfile_rs2_data;
+            end
             endcase
-            rs2_data_forwarded = 1;
         end
         else if (regfile_we_MEMEX & (rs2 == rd_MEMEX)) begin
+            rs2_data_forwarded = 1;
             case (rd_data_sel_MEMEX)
             `RD_DATA_SEL_ALU: rs2_data_ID = alu_result_MEMEX;
             `RD_DATA_SEL_PC4: rs2_data_ID = pc4_MEMEX;
+            default: begin
+                rs2_data_forwarded = 0;
+                rs2_data_ID = regfile_rs2_data;
+            end
             endcase
-            rs2_data_forwarded = 1;
         end
         else if (regfile_we_WB & (rs2 == rd_WB)) begin
+            rs2_data_forwarded = 1;
             case (rd_data_sel_WB)
             `RD_DATA_SEL_ALU: rs2_data_ID = alu_result_WB;
             `RD_DATA_SEL_PC4: rs2_data_ID = pc4_WB;
+            default: begin
+                rs2_data_forwarded = 0;
+                rs2_data_ID = regfile_rs2_data;
+            end
             endcase
-            rs2_data_forwarded = 1;
         end
         else begin
             rs2_data_ID = regfile_rs2_data;
