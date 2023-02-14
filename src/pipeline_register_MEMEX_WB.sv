@@ -9,6 +9,7 @@ module pipeline_register_MEMEX_WB(
     input logic [1:0] rd_data_sel_MEMEX,
     input logic lsu_sign_extend_MEMEX,
     input logic [1:0] data_width_MEMEX,
+    input integer immediate_MEMEX,
     
     output integer pc4_WB,
     output logic [3:0] rd_WB,
@@ -17,6 +18,7 @@ module pipeline_register_MEMEX_WB(
     output logic [1:0] rd_data_sel_WB,
     output logic lsu_sign_extend_WB,
     output logic [1:0] data_width_WB,
+    output integer immediate_WB,
     output logic invalid_WB
     );
     
@@ -29,6 +31,7 @@ module pipeline_register_MEMEX_WB(
         rd_data_sel_WB <= rd_data_sel_MEMEX;
         lsu_sign_extend_WB <= lsu_sign_extend_MEMEX;
         data_width_WB <= data_width_MEMEX;
+        immediate_WB <= immediate_MEMEX;
         
         if (invalid_MEMEX) begin
             regfile_we_WB <= 1'b0;

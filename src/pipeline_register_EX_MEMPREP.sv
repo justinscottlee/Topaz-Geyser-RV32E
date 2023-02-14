@@ -10,6 +10,7 @@ module pipeline_register_EX_MEMPREP(
     input logic lsu_we_EX, lsu_sign_extend_EX,
     input logic [1:0] data_width_EX,
     input integer rs2_data_EX,
+    input integer immediate_EX,
     
     output integer pc4_MEMPREP,
     output logic [3:0] rd_MEMPREP,
@@ -19,6 +20,7 @@ module pipeline_register_EX_MEMPREP(
     output logic lsu_we_MEMPREP, lsu_sign_extend_MEMPREP,
     output logic [1:0] data_width_MEMPREP,
     output integer rs2_data_MEMPREP,
+    output integer immediate_MEMPREP,
     output logic invalid_MEMPREP
     );
     
@@ -33,6 +35,7 @@ module pipeline_register_EX_MEMPREP(
         lsu_sign_extend_MEMPREP <= lsu_sign_extend_EX;
         data_width_MEMPREP <= data_width_EX;
         rs2_data_MEMPREP <= rs2_data_EX;
+        immediate_MEMPREP <= immediate_EX;
         
         if (invalid_EX) begin
             regfile_we_MEMPREP <= 1'b0;

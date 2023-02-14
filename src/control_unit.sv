@@ -47,10 +47,14 @@ module control_unit(
     
     case (opcode)
     `OPCODE_LUI: begin
-        
+        rd_data_sel = `RD_DATA_SEL_IMM;
+        regfile_we = 1;
+        immediate = imm_U;
     end
     `OPCODE_AUIPC: begin
-        
+        alu_a_sel = `ALU_A_SEL_PC;
+        immediate = imm_U;
+        regfile_we = 1;
     end
     `OPCODE_JAL: begin
         immediate = imm_J;

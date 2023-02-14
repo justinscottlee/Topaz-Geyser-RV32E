@@ -80,7 +80,7 @@ module topaz_geyser_core(
     integer branch_addr;
     
     // PIPELINE WALL COMMENT -- EX-MEMPREP BOUNDARY
-    pipeline_register_EX_MEMPREP pr_EX_MEMPREP (clk, branch_taken | invalid_EX | rst, pc4_EX, rd_EX, alu_result_EX, regfile_we_EX, rd_data_sel_EX, lsu_we_EX, lsu_sign_extend_EX, data_width_EX, rs2_data_EX, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, lsu_we_MEMPREP, lsu_sign_extend_MEMPREP, data_width_MEMPREP, rs2_data_MEMPREP, invalid_MEMPREP);
+    pipeline_register_EX_MEMPREP pr_EX_MEMPREP (clk, branch_taken | invalid_EX | rst, pc4_EX, rd_EX, alu_result_EX, regfile_we_EX, rd_data_sel_EX, lsu_we_EX, lsu_sign_extend_EX, data_width_EX, rs2_data_EX, immediate_EX, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, lsu_we_MEMPREP, lsu_sign_extend_MEMPREP, data_width_MEMPREP, rs2_data_MEMPREP, immediate_MEMPREP, invalid_MEMPREP);
     logic invalid_MEMPREP;
     integer pc4_MEMPREP;
     logic [3:0] rd_MEMPREP;
@@ -90,6 +90,7 @@ module topaz_geyser_core(
     logic lsu_we_MEMPREP, lsu_sign_extend_MEMPREP;
     logic [1:0] data_width_MEMPREP;
     integer rs2_data_MEMPREP;
+    integer immediate_MEMPREP;
     
     
     // NOTE: this stuff should all be mostly fine??? just setup the variables retrieved from the control unit (make sure to get the logic inside there correct), and then pipeline that shit throughout the whole pipeline
@@ -105,7 +106,7 @@ module topaz_geyser_core(
     integer dtcm_read_data_WB;
     
     // PIPELINE WALL COMMENT -- MEMPREP-MEMEX BOUNDARY
-    pipeline_register_MEMPREP_MEMEX pr_MEMPREP_MEMEX (clk, invalid_MEMPREP | rst, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, lsu_sign_extend_MEMPREP, data_width_MEMPREP, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, lsu_sign_extend_MEMEX, data_width_MEMEX, invalid_MEMEX);
+    pipeline_register_MEMPREP_MEMEX pr_MEMPREP_MEMEX (clk, invalid_MEMPREP | rst, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, lsu_sign_extend_MEMPREP, data_width_MEMPREP, immediate_MEMPREP, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, lsu_sign_extend_MEMEX, data_width_MEMEX, immediate_MEMEX, invalid_MEMEX);
     logic invalid_MEMEX;
     integer pc4_MEMEX;
     logic [3:0] rd_MEMEX;
@@ -114,10 +115,11 @@ module topaz_geyser_core(
     logic [1:0] rd_data_sel_MEMEX;
     logic lsu_sign_extend_MEMEX;
     logic [1:0] data_width_MEMEX;
+    integer immediate_MEMEX;
     // MEMEX-STAGE
     
     // PIPELINE WALL COMMENT -- MEMEX-WB BOUNDARY
-    pipeline_register_MEMEX_WB pr_MEMEX_WB (clk, invalid_MEMEX | rst, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, lsu_sign_extend_MEMEX, data_width_MEMEX, pc4_WB, rd_WB, alu_result_WB, regfile_we_WB, rd_data_sel_WB, lsu_sign_extend_WB, data_width_WB, invalid_WB);
+    pipeline_register_MEMEX_WB pr_MEMEX_WB (clk, invalid_MEMEX | rst, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, lsu_sign_extend_MEMEX, data_width_MEMEX, immediate_MEMEX, pc4_WB, rd_WB, alu_result_WB, regfile_we_WB, rd_data_sel_WB, lsu_sign_extend_WB, data_width_WB, immediate_WB, invalid_WB);
     logic invalid_WB;
     integer pc4_WB;
     logic [3:0] rd_WB;
@@ -126,8 +128,9 @@ module topaz_geyser_core(
     logic [1:0] rd_data_sel_WB;
     logic lsu_sign_extend_WB;
     logic [1:0] data_width_WB;
+    integer immediate_WB;
     
-    mux4 mux_rd_data (rd_data_sel_WB, alu_result_WB, pc4_WB, lsu_read_data_WB, 32'b0, rd_data_WB);
+    mux4 mux_rd_data (rd_data_sel_WB, alu_result_WB, pc4_WB, lsu_read_data_WB, immediate_WB, rd_data_WB);
     integer rd_data_WB;
     
     always_comb begin
