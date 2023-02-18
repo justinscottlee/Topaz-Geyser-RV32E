@@ -6,26 +6,14 @@ module topaz_geyser_core(
     );
     
     logic clk;
-    clk_wiz_0 clk_wiz (.clk_100M(sys_clk), .reset(~cpu_rst), .locked(locked), .clk_170M(clk));
+    clk_wiz_0 clk_wiz (.clk_100M(sys_clk), .reset(~cpu_rst), .locked(locked), .clk_130M(clk));
 
     logic rst;
     always_ff @ (posedge clk or posedge locked) begin
         if (locked) rst <= 1;
         if (clk) rst <= 0;
     end
-/*
-    logic rst;
-    assign rst = ~cpu_rst;
-    
-    logic clk = 0;
-    logic [16:0] clock_division_counter = 0;
-    always_ff @ (posedge sys_clk) begin
-        clock_division_counter <= clock_division_counter + 1;
-        if (clock_division_counter == 0) begin
-            clk = ~clk;
-        end
-    end
-*/
+
     seven_segment_display_controller seven_segment_display_controller (sys_clk, alu_result_EX, seven_segment_control_field);
 
     logic stall;
@@ -34,15 +22,13 @@ module topaz_geyser_core(
     integer pc0_IF, pc4_IF;
     // IF-STAGE
     instruction_memory itcm (.clk(clk), .we(itcm_we_MEMEX), .addr_ro(pc0_IF[11:0]), .addr_rw(alu_result_MEMEX - 32'h5000), .write_instruction_rw(rs2_data_MEMEX), .read_instruction_ro(instruction_IF), .read_instruction_rw(itcm_read_data_WB));
-    integer instruction_IF;
-    integer itcm_read_data_WB;
+    integer itcm_read_data_WB, instruction_IF;
     
     // PIPELINE WALL COMMENT -- IF-ID BOUNDARY
     pipeline_register_IF_ID pr_IF_ID (clk, branch_taken | rst, stall, pc0_IF, pc4_IF, instruction_IF, pc0_ID, pc4_ID, instruction_ID, invalid_ID);
     logic invalid_ID;
     integer pc0_ID, pc4_ID, instruction_ID;
     // ID-STAGE
-    // TODO: make the control unit make the control signals
     control_unit control_unit (instruction_ID, immediate_ID, rd_ID, rs1, rs2, alu_operation_ID, regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID, branch_condition_ID, rd_data_sel_ID, branch_base_sel_ID, lsu_we_ID, lsu_sign_extend_ID, data_width_ID);
     integer immediate_ID;
     logic [3:0] rd_ID, rs1, rs2;
@@ -53,7 +39,7 @@ module topaz_geyser_core(
     logic [1:0] data_width_ID;
     regfile regfile (clk, rst, regfile_we_WB, rs1, rs2, rd_WB, rd_data_WB, regfile_rs1_data, regfile_rs2_data);
     integer regfile_rs1_data, regfile_rs2_data;
-    forwarding_unit forwarding_unit (regfile_rs1_data, regfile_rs2_data, rs1, rs2, regfile_we_EX & ~invalid_EX, regfile_we_MEMPREP & ~invalid_MEMPREP, regfile_we_MEMEX & ~invalid_MEMEX, regfile_we_WB & ~invalid_WB, rd_EX, rd_MEMPREP, rd_MEMEX, rd_WB, alu_result_EX, alu_result_MEMPREP, alu_result_MEMEX, alu_result_WB, pc4_MEMPREP, pc4_MEMEX, pc4_WB, rd_data_sel_EX, rd_data_sel_MEMPREP, rd_data_sel_MEMEX, rd_data_sel_WB, rs1_data_ID, rs2_data_ID, rs1_data_forwarded, rs2_data_forwarded);
+    forwarding_unit forwarding_unit (regfile_rs1_data, regfile_rs2_data, rs1, rs2, regfile_we_EX & ~invalid_EX, regfile_we_MEMPREP & ~invalid_MEMPREP, regfile_we_MEMEX & ~invalid_MEMEX, regfile_we_WB & ~invalid_WB, rd_EX, rd_MEMPREP, rd_MEMEX, rd_WB, alu_result_EX, alu_result_MEMPREP, alu_result_MEMEX, alu_result_WB, lsu_read_data_WB, pc4_MEMPREP, pc4_MEMEX, pc4_WB, rd_data_sel_EX, rd_data_sel_MEMPREP, rd_data_sel_MEMEX, rd_data_sel_WB, rs1_data_ID, rs2_data_ID, rs1_data_forwarded, rs2_data_forwarded);
     integer rs1_data_ID, rs2_data_ID;
     logic rs1_data_forwarded, rs2_data_forwarded;
     

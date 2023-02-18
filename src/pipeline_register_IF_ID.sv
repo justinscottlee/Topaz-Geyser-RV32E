@@ -16,7 +16,7 @@ module pipeline_register_IF_ID(
             instruction_ID <= instruction_IF;
         end
         if (invalid_IF) begin
-            instruction_ID <= 32'h13; // NOP
+            instruction_ID <= 32'h13;
         end
     end
 endmodule

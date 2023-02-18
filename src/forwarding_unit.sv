@@ -8,6 +8,7 @@ module forwarding_unit(
     input logic regfile_we_EX, regfile_we_MEMPREP, regfile_we_MEMEX, regfile_we_WB,
     input logic [3:0] rd_EX, rd_MEMPREP, rd_MEMEX, rd_WB,
     input integer alu_result_EX, alu_result_MEMPREP, alu_result_MEMEX, alu_result_WB,
+    input integer lsu_read_data_WB,
     input integer pc4_MEMPREP, pc4_MEMEX, pc4_WB,
     input logic [1:0] rd_data_sel_EX, rd_data_sel_MEMPREP, rd_data_sel_MEMEX, rd_data_sel_WB,
     output integer rs1_data_ID, rs2_data_ID,
@@ -56,6 +57,7 @@ module forwarding_unit(
             case (rd_data_sel_WB)
             `RD_DATA_SEL_ALU: rs1_data_ID = alu_result_WB;
             `RD_DATA_SEL_PC4: rs1_data_ID = pc4_WB;
+            `RD_DATA_SEL_LSU: rs1_data_ID = lsu_read_data_WB;
             default: begin
                 rs1_data_forwarded = 0;
                 rs1_data_ID = regfile_rs1_data;
@@ -108,6 +110,7 @@ module forwarding_unit(
             case (rd_data_sel_WB)
             `RD_DATA_SEL_ALU: rs2_data_ID = alu_result_WB;
             `RD_DATA_SEL_PC4: rs2_data_ID = pc4_WB;
+            `RD_DATA_SEL_LSU: rs2_data_ID = lsu_read_data_WB;
             default: begin
                 rs2_data_forwarded = 0;
                 rs2_data_ID = regfile_rs2_data;
