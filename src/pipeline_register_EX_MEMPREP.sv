@@ -39,6 +39,7 @@ module pipeline_register_EX_MEMPREP(
         
         if (invalid_EX) begin
             regfile_we_MEMPREP <= 1'b0;
+            lsu_we_MEMPREP <= 1'b0;
         end
     end
 endmodule

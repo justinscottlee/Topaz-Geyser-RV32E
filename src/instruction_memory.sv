@@ -15,7 +15,6 @@ module instruction_memory #(
     
     assign read_instruction_ro = mem[addr_ro >> 2];
     
-    /*
     always_ff @ (posedge clk) begin
         if (we) begin
             mem[addr_rw >> 2] <= write_instruction_rw;
@@ -23,5 +22,5 @@ module instruction_memory #(
         else begin
             read_instruction_rw <= mem[addr_rw >> 2];
         end
-    end*/
+    end
 endmodule

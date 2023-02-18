@@ -1,7 +1,5 @@
 # 100MHZ SYS CLOCK
 set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports {sys_clk}]
-#set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sys_clk_IBUF];
-#set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports sys_clk]; # connect clock to SW0
 
 # RESET BUTTON
 set_property -dict { PACKAGE_PIN C12 IOSTANDARD LVCMOS33 } [get_ports cpu_rst]; # active-low CPU_RST button

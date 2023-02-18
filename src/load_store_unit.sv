@@ -14,6 +14,8 @@ module load_store_unit(
     input integer dtcm_read_data,
     
     // ITCM
+    output logic itcm_we,
+    input integer itcm_read_data,
     
     output integer read_data
     );
@@ -28,19 +30,19 @@ module load_store_unit(
             dtcm_we = we;
         end
         [32'h5000:32'h8FFF]: begin // instruction TCM
-        
+            itcm_we = we;
         end
         endcase
         
         case (addr_read) inside
         [32'h0000:32'h0FFF]: begin // CSR
-        
+            
         end
         [32'h1000:32'h4FFF]: begin // data TCM
             read_data = dtcm_read_data;
         end
         [32'h5000:32'h8FFF]: begin // instruction TCM
-        
+            read_data = itcm_read_data;
         end
         endcase
         
@@ -52,5 +54,4 @@ module load_store_unit(
             endcase
         end
     end
-    
 endmodule
