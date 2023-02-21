@@ -7,13 +7,13 @@ module spi_controller(
     input logic miso,
     output logic mosi,
     
-    input logic start,
+    input logic trigger,
     input byte command,
     output byte response,
     inout logic [7:0] csr // [NC, NC, NC, NC, NC, CPOL, CPHA, BSY]
     );
     
-    always_ff @ (negedge clk or posedge clk) slave_clk = (state == IDLE) ? 1'b0 : ~slave_clk;
+    assign slave_clk = (state == IDLE) ? 1'b0 : ~clk;
     
     bit [2:0] command_index;
     assign mosi = command[command_index];
@@ -29,7 +29,7 @@ module spi_controller(
     always_ff @ (posedge clk) begin
         case (state)
         IDLE: begin
-            if (start) begin
+            if (trigger) begin
                 command_index <= 3'd7;
                 state <= BUSY;
             end

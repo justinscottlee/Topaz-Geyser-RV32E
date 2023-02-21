@@ -2,7 +2,12 @@
 
 module topaz_geyser_core(
     input logic sys_clk, cpu_rst,
-    output logic [14:0] seven_segment_control_field
+    output logic [14:0] seven_segment_control_field,
+    
+    // SPI
+    output logic spi_mosi,
+    input logic spi_miso,
+    output logic spi_sck
     );
     
     logic clk;
@@ -39,7 +44,7 @@ module topaz_geyser_core(
     logic [1:0] data_width_ID;
     regfile regfile (clk, rst, regfile_we_WB, rs1, rs2, rd_WB, rd_data_WB, regfile_rs1_data, regfile_rs2_data);
     integer regfile_rs1_data, regfile_rs2_data;
-    forwarding_unit forwarding_unit (regfile_rs1_data, regfile_rs2_data, rs1, rs2, regfile_we_EX & ~invalid_EX, regfile_we_MEMPREP & ~invalid_MEMPREP, regfile_we_MEMEX & ~invalid_MEMEX, regfile_we_WB & ~invalid_WB, rd_EX, rd_MEMPREP, rd_MEMEX, rd_WB, alu_result_EX, alu_result_MEMPREP, alu_result_MEMEX, alu_result_WB, lsu_read_data_WB, pc4_MEMPREP, pc4_MEMEX, pc4_WB, rd_data_sel_EX, rd_data_sel_MEMPREP, rd_data_sel_MEMEX, rd_data_sel_WB, rs1_data_ID, rs2_data_ID, rs1_data_forwarded, rs2_data_forwarded);
+    forwarding_unit forwarding_unit (regfile_rs1_data, regfile_rs2_data, rs1, rs2, regfile_we_EX & ~invalid_EX, regfile_we_MEMPREP & ~invalid_MEMPREP, regfile_we_MEMEX & ~invalid_MEMEX, regfile_we_WB & ~invalid_WB, rd_EX, rd_MEMPREP, rd_MEMEX, rd_WB, alu_result_EX, alu_result_MEMPREP, alu_result_MEMEX, alu_result_WB, lsu_read_data_WB, immediate_EX, immediate_MEMPREP, immediate_MEMEX, immediate_WB, pc4_MEMPREP, pc4_MEMEX, pc4_WB, rd_data_sel_EX, rd_data_sel_MEMPREP, rd_data_sel_MEMEX, rd_data_sel_WB, rs1_data_ID, rs2_data_ID, rs1_data_forwarded, rs2_data_forwarded);
     integer rs1_data_ID, rs2_data_ID;
     logic rs1_data_forwarded, rs2_data_forwarded;
     
@@ -81,14 +86,17 @@ module topaz_geyser_core(
     
     // MEMPREP-STAGE
     // sign extend only affects reads
-    logic lsu_we_MEMPREP, lsu_sign_extend_WB;
-    logic [1:0] data_width_WB;
-    load_store_unit lsu (clk, lsu_we_MEMPREP, lsu_sign_extend_WB, data_width_WB, alu_result_WB, alu_result_MEMPREP, dtcm_we_MEMPREP, dtcm_read_data_WB, itcm_we_MEMPREP, itcm_read_data_WB, lsu_read_data_WB);
+    load_store_unit lsu (clk, lsu_we_MEMPREP, rst, lsu_sign_extend_WB, data_width_WB, rs2_data_MEMPREP, alu_result_WB, alu_result_MEMPREP, spi_csr, spi_trigger, spi_command, spi_response, dtcm_we_MEMPREP, dtcm_read_data_WB, itcm_we_MEMPREP, itcm_read_data_WB, lsu_read_data_WB);
     logic dtcm_we_MEMPREP;
     integer lsu_read_data_WB;
     single_port_memory_group dtcm (clk, dtcm_we_MEMPREP, data_width_MEMPREP, alu_result_MEMPREP - 32'h1000, rs2_data_MEMPREP, dtcm_read_data_WB);
     integer dtcm_read_data_WB;
     logic itcm_we_MEMPREP;
+    
+    logic spi_trigger;
+    byte spi_command, spi_reponse;
+    spi_controller spi(clk, rst, spi_sck, spi_miso, spi_mosi, spi_trigger, spi_command, spi_response, spi_csr);
+    wire [7:0] spi_csr;
     
     // PIPELINE WALL COMMENT -- MEMPREP-MEMEX BOUNDARY
     pipeline_register_MEMPREP_MEMEX pr_MEMPREP_MEMEX (clk, invalid_MEMPREP | rst, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, lsu_sign_extend_MEMPREP, data_width_MEMPREP, immediate_MEMPREP, itcm_we_MEMPREP, rs2_data_MEMPREP, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, lsu_sign_extend_MEMEX, data_width_MEMEX, immediate_MEMEX, itcm_we_MEMEX, rs2_data_MEMEX, invalid_MEMEX);
@@ -121,7 +129,7 @@ module topaz_geyser_core(
     integer rd_data_WB;
     
     always_comb begin
-        logic should_stall = (~rs1_data_forwarded & (((rs1 == rd_EX) & regfile_we_EX & ~invalid_EX) | ((rs1 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP) | ((rs1 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX) | ((rs1 == rd_WB) & regfile_we_WB & ~invalid_WB))) | (~rs2_data_forwarded & (((rs2 == rd_EX) & regfile_we_EX & ~invalid_EX) | ((rs2 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP) | ((rs2 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX) | ((rs2 == rd_WB) & regfile_we_WB & ~invalid_WB)));
+        logic should_stall = ~branch_taken & ((~rs1_data_forwarded & (((rs1 == rd_EX) & regfile_we_EX & ~invalid_EX) | ((rs1 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP) | ((rs1 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX) | ((rs1 == rd_WB) & regfile_we_WB & ~invalid_WB))) | (~rs2_data_forwarded & (((rs2 == rd_EX) & regfile_we_EX & ~invalid_EX) | ((rs2 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP) | ((rs2 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX) | ((rs2 == rd_WB) & regfile_we_WB & ~invalid_WB))));
         case (should_stall)
         1: stall = 1;
         0: stall = 0;
