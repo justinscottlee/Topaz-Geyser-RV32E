@@ -102,6 +102,11 @@ module load_store_unit(
             `DATAWIDTH_BYTE: read_data = { {24{read_data[7]}}, read_data[7:0] };
             `DATAWIDTH_SHORT: read_data = { {16{read_data[15]}}, read_data[15:0] };
             endcase
+        end else begin
+            case (data_width)
+            `DATAWIDTH_BYTE: read_data = { 24'b0, read_data[7:0] };
+            `DATAWIDTH_SHORT: read_data = { 16'b0, read_data[15:0] };
+            endcase
         end
     end
 endmodule
