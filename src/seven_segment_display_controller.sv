@@ -12,7 +12,7 @@ module seven_segment_display_controller (
 
     always_comb begin
         for (int i = 0; i < 8; i++) begin
-            digits[i] = (value >> (4 * i)) & 'hF;
+            digits[i] = (value >> (i << 2)) & 'hF;
         end
     end
 

@@ -10,6 +10,9 @@ module load_store_unit(
     
     // CSR
     
+    // SEVEN SEGMENT
+    output integer seven_segment_value,
+    
     // SPI
     inout logic [7:0] spi_csr,
     output logic spi_trigger,
@@ -33,25 +36,39 @@ module load_store_unit(
     always_ff @ (posedge clk) begin
         if (rst) begin
             internal_spi_csr <= 7'b0;
+            internal_spi_csr[2] <= 1'b1; // SPI_CS
+            seven_segment_value <= 32'd0;
+        end
+        
+        spi_trigger <= 1'b0;
+        
+        if (we) begin
+            case (addr_write) inside
+            [32'h0000:32'hFFF]: begin // CSR
+                if (addr_write == 32'h800) begin // SPI_COMMAND
+                    spi_command <= write_data;
+                    spi_trigger <= 1'b1;
+                end
+                
+                else if (addr_write == 32'h801) begin // SPI_CSR
+                    internal_spi_csr <= write_data[7:1];
+                end
+                
+                else if (addr_write == 32'h804) begin // SEVEN SEGMENT
+                    seven_segment_value <= write_data;
+                end
+            end
+            endcase
         end
     end
     
     always_comb begin
         dtcm_we = 0;
         itcm_we = 0;
-        spi_trigger <= 0;
+        
+        read_data = 32'd0; // initialize to 0 to prevent latching
+        
         case (addr_write) inside
-        [32'h0000:32'hFFF]: begin // CSR
-            if (we) begin
-                if (addr_write == 32'h800) begin
-                    spi_command = write_data;
-                    spi_trigger <= 1'b1;
-                end
-                else if (addr_write == 32'h801) begin
-                    internal_spi_csr <= write_data[7:1];
-                end
-            end
-        end
         [32'h1000:32'h4FFF]: begin // data TCM
             dtcm_we = we;
         end
@@ -68,6 +85,9 @@ module load_store_unit(
             else if (addr_read == 32'h801) begin
                 read_data = spi_csr;
             end
+            else if (addr_read == 32'h804) begin
+                read_data = seven_segment_value;
+            end
         end
         [32'h1000:32'h4FFF]: begin // data TCM
             read_data = dtcm_read_data;
@@ -81,12 +101,7 @@ module load_store_unit(
             case (data_width)
             `DATAWIDTH_BYTE: read_data = { {24{read_data[7]}}, read_data[7:0] };
             `DATAWIDTH_SHORT: read_data = { {16{read_data[15]}}, read_data[15:0] };
-            default: read_data = read_data;
             endcase
-        end
-        
-        if (spi_csr[0]) begin
-            spi_trigger <= 1'b0;
         end
     end
 endmodule

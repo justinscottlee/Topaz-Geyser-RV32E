@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module spi_controller(
-    input logic clk, rst,
+    input logic clk,
     
     output logic slave_clk,
     input logic miso,
@@ -10,10 +10,8 @@ module spi_controller(
     input logic trigger,
     input byte command,
     output byte response,
-    inout logic [7:0] csr // [NC, NC, NC, NC, NC, CPOL, CPHA, BSY]
+    inout logic [7:0] csr // [NC, NC, NC, NC, CS, CPOL, CPHA, BSY]
     );
-    
-    assign slave_clk = (state == IDLE) ? 1'b0 : ~clk;
     
     bit [2:0] command_index;
     assign mosi = command[command_index];
@@ -21,6 +19,8 @@ module spi_controller(
     localparam IDLE = 1'b0, BUSY = 1'b1;
     bit state;
     assign csr[0] = state;
+    
+    assign slave_clk = (state == IDLE) ? 1'b0 : ~clk;
     
     always_ff @ (posedge slave_clk) begin
         response[command_index] <= miso;

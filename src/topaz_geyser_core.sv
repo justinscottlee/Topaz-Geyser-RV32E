@@ -7,7 +7,8 @@ module topaz_geyser_core(
     // SPI
     output logic spi_mosi,
     input logic spi_miso,
-    output logic spi_sck
+    output logic spi_sck,
+    output logic spi_cs
     );
     
     logic clk;
@@ -19,7 +20,8 @@ module topaz_geyser_core(
         if (clk) rst <= 0;
     end
 
-    seven_segment_display_controller seven_segment_display_controller (sys_clk, alu_result_EX, seven_segment_control_field);
+    integer seven_segment_value;
+    seven_segment_display_controller seven_segment_display_controller (sys_clk, seven_segment_value, seven_segment_control_field);
 
     logic stall;
     
@@ -86,7 +88,7 @@ module topaz_geyser_core(
     
     // MEMPREP-STAGE
     // sign extend only affects reads
-    load_store_unit lsu (clk, lsu_we_MEMPREP, rst, lsu_sign_extend_WB, data_width_WB, rs2_data_MEMPREP, alu_result_WB, alu_result_MEMPREP, spi_csr, spi_trigger, spi_command, spi_response, dtcm_we_MEMPREP, dtcm_read_data_WB, itcm_we_MEMPREP, itcm_read_data_WB, lsu_read_data_WB);
+    load_store_unit lsu (clk, lsu_we_MEMPREP, rst, lsu_sign_extend_WB, data_width_WB, rs2_data_MEMPREP, alu_result_WB, alu_result_MEMPREP, seven_segment_value, spi_csr, spi_trigger, spi_command, spi_response, dtcm_we_MEMPREP, dtcm_read_data_WB, itcm_we_MEMPREP, itcm_read_data_WB, lsu_read_data_WB);
     logic dtcm_we_MEMPREP;
     integer lsu_read_data_WB;
     single_port_memory_group dtcm (clk, dtcm_we_MEMPREP, data_width_MEMPREP, alu_result_MEMPREP - 32'h1000, rs2_data_MEMPREP, dtcm_read_data_WB);
@@ -95,8 +97,9 @@ module topaz_geyser_core(
     
     logic spi_trigger;
     byte spi_command, spi_reponse;
-    spi_controller spi(clk, rst, spi_sck, spi_miso, spi_mosi, spi_trigger, spi_command, spi_response, spi_csr);
+    spi_controller spi(clk, spi_sck, spi_miso, spi_mosi, spi_trigger, spi_command, spi_response, spi_csr);
     wire [7:0] spi_csr;
+    assign spi_cs = spi_csr[3];
     
     // PIPELINE WALL COMMENT -- MEMPREP-MEMEX BOUNDARY
     pipeline_register_MEMPREP_MEMEX pr_MEMPREP_MEMEX (clk, invalid_MEMPREP | rst, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, lsu_sign_extend_MEMPREP, data_width_MEMPREP, immediate_MEMPREP, itcm_we_MEMPREP, rs2_data_MEMPREP, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, lsu_sign_extend_MEMEX, data_width_MEMEX, immediate_MEMEX, itcm_we_MEMEX, rs2_data_MEMEX, invalid_MEMEX);
