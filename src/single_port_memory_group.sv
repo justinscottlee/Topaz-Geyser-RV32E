@@ -103,7 +103,7 @@ module single_port_memory_group #(
     end
     
     always_ff @ (posedge clk) begin
-        case (bank_base_WB)
+        case (bank_base_MEMEX)
         2'd0: read_data <= {bank3_read_data, bank2_read_data, bank1_read_data, bank0_read_data};
         2'd1: read_data <= {bank0_read_data, bank3_read_data, bank2_read_data, bank1_read_data};
         2'd2: read_data <= {bank1_read_data, bank0_read_data, bank3_read_data, bank2_read_data};
