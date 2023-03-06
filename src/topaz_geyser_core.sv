@@ -96,7 +96,8 @@ module topaz_geyser_core(
     logic itcm_we_MEMPREP;
     
     logic spi_trigger;
-    byte spi_command, spi_reponse;
+    byte spi_command;
+    logic [7:0] spi_response;
     spi_controller spi(clk, spi_sck, spi_miso, spi_mosi, spi_trigger, spi_command, spi_response, spi_csr);
     wire [7:0] spi_csr;
     assign spi_cs = spi_csr[3];
