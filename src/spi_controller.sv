@@ -1,47 +1,61 @@
 `timescale 1ns / 1ps
 
-module spi_controller(
-    input logic clk,
-    
-    output logic slave_clk,
+module spi_controller (
+    input logic clk, rst, trigger,
+
     input logic miso,
-    output logic mosi,
-    
-    input logic trigger,
-    input byte command,
-    output byte response,
-    inout logic [7:0] csr // [NC, NC, NC, NC, CS, CPOL, CPHA, BSY]
-    );
-    
-    bit [2:0] command_index;
-    assign mosi = command[command_index];
-    
-    localparam IDLE = 1'b0, BUSY = 1'b1;
-    bit state;
-    assign csr[0] = state;
-    
-    assign slave_clk = (state == IDLE) ? 1'b0 : ~clk;
-    
-    always_ff @ (posedge slave_clk) begin
-        response[command_index] <= miso;
+    output logic mosi, sck,
+
+    input logic pol, pha,
+    output logic busy,
+
+    input logic [7:0] tx_data,
+    output logic [7:0] rx_data
+);
+
+localparam IDLE = 2'b00, TRANSFER = 2'b01, TIMING = 2'b10;
+
+bit [1:0] state;
+bit [2:0] index;
+
+assign busy = (state != IDLE);
+assign mosi = tx_data[index];
+
+function void reset();
+    state <= IDLE;
+    index <= 3'd7;
+    sck <= pol;
+endfunction
+
+always_ff @ (posedge clk) begin
+    if (rst) begin
+        reset();
     end
-    
-    always_ff @ (posedge clk) begin
-        case (state)
-        IDLE: begin
-            if (trigger) begin
-                command_index <= 3'd7;
-                state <= BUSY;
-            end
+
+    case (state)
+    IDLE: begin
+        if (trigger) begin
+            if (pha) sck <= ~sck;
+            state <= TRANSFER;
         end
-        BUSY: begin
-            if (command_index == 0) begin
-                state <= IDLE;
-            end
-            else begin
-                command_index <= command_index - 1;
-            end
-        end
-        endcase
     end
+
+    TRANSFER: begin
+        rx_data[index] <= miso;
+        sck <= ~sck;
+        state <= TIMING;
+    end
+
+    TIMING: begin
+        if (index == 0) begin
+            reset();
+        end
+        else begin
+            sck <= ~sck;
+            index <= index - 1;
+            state <= TRANSFER;
+        end
+    end
+    endcase
+end
 endmodule

@@ -11,14 +11,11 @@ module topaz_geyser_core(
     output logic spi_cs
     );
     
-    logic clk;
-    clk_wiz_0 clk_wiz (.clk_100M(sys_clk), .reset(~cpu_rst), .locked(locked), .clk_130M(clk));
+    logic clk, clk_SPI;
+    clk_wiz_0 clk_wiz (.clk_100M(sys_clk), .locked(locked), .clk_CORE(clk), .clk_SPI(clk_SPI));
 
     logic rst;
-    always_ff @ (posedge clk or posedge locked) begin
-        if (locked) rst <= 1;
-        if (clk) rst <= 0;
-    end
+    assign rst = ~cpu_rst;
 
     integer seven_segment_value;
     seven_segment_display_controller seven_segment_display_controller (sys_clk, seven_segment_value, seven_segment_control_field);
@@ -96,9 +93,9 @@ module topaz_geyser_core(
     logic itcm_we_MEMPREP;
     
     logic spi_trigger;
-    byte spi_command;
-    logic [7:0] spi_response;
-    spi_controller spi(clk, spi_sck, spi_miso, spi_mosi, spi_trigger, spi_command, spi_response, spi_csr);
+    wire [7:0] spi_command;
+    wire [7:0] spi_response;
+    spi_controller spi(clk_SPI, rst, spi_trigger, spi_miso, spi_mosi, spi_sck, spi_csr[2], spi_csr[1], spi_csr[0], spi_command, spi_response);
     wire [7:0] spi_csr;
     assign spi_cs = spi_csr[3];
     
@@ -133,7 +130,7 @@ module topaz_geyser_core(
     integer rd_data_WB;
     
     always_comb begin
-        logic should_stall = ~branch_taken & ((~rs1_data_forwarded & (((rs1 == rd_EX) & regfile_we_EX & ~invalid_EX) | ((rs1 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP) | ((rs1 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX) | ((rs1 == rd_WB) & regfile_we_WB & ~invalid_WB))) | (~rs2_data_forwarded & (((rs2 == rd_EX) & regfile_we_EX & ~invalid_EX) | ((rs2 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP) | ((rs2 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX) | ((rs2 == rd_WB) & regfile_we_WB & ~invalid_WB))));
+        logic should_stall = (lsu_we_EX & (alu_result_EX == 32'h800)) | (lsu_we_MEMPREP & (alu_result_MEMPREP == 32'h800)) | spi_trigger | spi_csr[0] | ~branch_taken & ((~rs1_data_forwarded & (((rs1 == rd_EX) & regfile_we_EX & ~invalid_EX) | ((rs1 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP) | ((rs1 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX) | ((rs1 == rd_WB) & regfile_we_WB & ~invalid_WB))) | (~rs2_data_forwarded & (((rs2 == rd_EX) & regfile_we_EX & ~invalid_EX) | ((rs2 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP) | ((rs2 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX) | ((rs2 == rd_WB) & regfile_we_WB & ~invalid_WB))));
         case (should_stall)
         1: stall = 1;
         0: stall = 0;

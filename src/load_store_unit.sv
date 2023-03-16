@@ -38,9 +38,12 @@ module load_store_unit(
             internal_spi_csr <= 7'b0;
             internal_spi_csr[2] <= 1'b1; // SPI_CS
             seven_segment_value <= 32'd0;
+            spi_trigger <= 1'b0;
         end
         
-        spi_trigger <= 1'b0;
+        if (spi_csr[0]) begin
+            spi_trigger <= 1'b0;
+        end
         
         if (we) begin
             case (addr_write) inside

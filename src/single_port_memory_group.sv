@@ -12,7 +12,7 @@ module single_port_memory_group #(
     output integer read_data
     );
     
-    logic [1:0] bank_base_MEMPREP, bank_base_MEMEX, bank_base_WB; // pipelined for reads (bank_base_MEMEX is an unused intermediate through the pipeline)
+    logic [1:0] bank_base_MEMPREP, bank_base_MEMEX; // pipelined for reads (bank_base_MEMEX is an unused intermediate through the pipeline)
     logic [$clog2(DATA_DEPTH)-1:0] bank_addr;
     
     // RISC-V allows misaligned address accesses, so this calculates the memory bank the data starts at.
@@ -99,7 +99,6 @@ module single_port_memory_group #(
     
     always_ff @ (posedge clk) begin
         bank_base_MEMEX <= bank_base_MEMPREP;
-        bank_base_WB <= bank_base_MEMEX;
     end
     
     always_ff @ (posedge clk) begin
