@@ -3,7 +3,7 @@
 `include "defines.vh"
 
 module pipeline_register_ID_EX(
-    input logic clk, invalid_ID, stall,
+    input logic clk, invalid_ID, stalled_ID, stall,
     input integer pc0_ID, pc4_ID,
     input logic [3:0] rd_ID, alu_operation_ID,
     input logic regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID,
@@ -20,11 +20,12 @@ module pipeline_register_ID_EX(
     output logic [1:0] branch_condition_EX, rd_data_sel_EX,
     output logic branch_base_sel_EX, lsu_we_EX, lsu_sign_extend_EX,
     output logic [1:0] data_width_EX,
-    output logic invalid_EX
+    output logic invalid_EX, stalled_EX
     );
     
     always @ (posedge clk) begin
         invalid_EX <= invalid_ID;
+        stalled_EX <= stalled_ID;
         if (!stall) begin
             pc0_EX <= pc0_ID;
             pc4_EX <= pc4_ID;
@@ -44,7 +45,7 @@ module pipeline_register_ID_EX(
             data_width_EX <= data_width_ID;
         end
         
-        if (stall | invalid_ID) begin
+        if (invalid_ID) begin
             branch_condition_EX <= `BRANCH_FORCE_FALSE;
             regfile_we_EX <= 1'b0;
             lsu_we_EX <= 1'b0;

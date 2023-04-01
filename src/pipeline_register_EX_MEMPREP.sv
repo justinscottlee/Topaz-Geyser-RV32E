@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module pipeline_register_EX_MEMPREP(
-    input logic clk, invalid_EX,
+    input logic clk, invalid_EX, stalled_EX,
     input integer pc4_EX,
     input logic [3:0] rd_EX,
     input integer alu_result_EX,
@@ -21,10 +21,11 @@ module pipeline_register_EX_MEMPREP(
     output logic [1:0] data_width_MEMPREP,
     output integer rs2_data_MEMPREP,
     output integer immediate_MEMPREP,
-    output logic invalid_MEMPREP
+    output logic invalid_MEMPREP, stalled_MEMPREP
     );
     
     always @ (posedge clk) begin
+        stalled_MEMPREP <= stalled_EX;
         invalid_MEMPREP <= invalid_EX;
         pc4_MEMPREP <= pc4_EX;
         rd_MEMPREP <= rd_EX;

@@ -8,11 +8,16 @@ module topaz_geyser_core(
     output logic spi_mosi,
     input logic spi_miso,
     output logic spi_sck,
-    output logic spi_cs
+    output logic spi_cs,
+    
+    // SRAM
+    output logic ic_we,
+    inout logic [7:0] ic_io,
+    output logic [16:0] ic_addr
     );
     
-    logic clk, clk_SPI;
-    clk_wiz_0 clk_wiz (.clk_100M(sys_clk), .locked(locked), .clk_CORE(clk), .clk_SPI(clk_SPI));
+    logic clk, clk_SPI, clk_SRAM;
+    clk_wiz_0 clk_wiz (.clk_100M(sys_clk), .locked(locked), .clk_CORE(clk), .clk_SPI(clk_SPI), .clk_SRAM(clk_SRAM));
 
     logic rst;
     assign rst = ~cpu_rst;
@@ -29,8 +34,8 @@ module topaz_geyser_core(
     integer itcm_read_data_WB, instruction_IF;
     
     // PIPELINE WALL COMMENT -- IF-ID BOUNDARY
-    pipeline_register_IF_ID pr_IF_ID (clk, branch_taken | rst, stall, pc0_IF, pc4_IF, instruction_IF, pc0_ID, pc4_ID, instruction_ID, invalid_ID);
-    logic invalid_ID;
+    pipeline_register_IF_ID pr_IF_ID (clk, branch_taken | rst, stall, pc0_IF, pc4_IF, instruction_IF, pc0_ID, pc4_ID, instruction_ID, invalid_ID, stalled_ID);
+    logic invalid_ID, stalled_ID;
     integer pc0_ID, pc4_ID, instruction_ID;
     // ID-STAGE
     control_unit control_unit (instruction_ID, immediate_ID, rd_ID, rs1, rs2, alu_operation_ID, regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID, branch_condition_ID, rd_data_sel_ID, branch_base_sel_ID, lsu_we_ID, lsu_sign_extend_ID, data_width_ID);
@@ -48,8 +53,8 @@ module topaz_geyser_core(
     logic rs1_data_forwarded, rs2_data_forwarded;
     
     // PIPELINE WALL COMMENT -- ID-EX BOUNDARY
-    pipeline_register_ID_EX pr_ID_EX (clk, branch_taken | invalid_ID | rst, stall, pc0_ID, pc4_ID, rd_ID, alu_operation_ID, regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID, immediate_ID, rs1_data_ID, rs2_data_ID, branch_condition_ID, rd_data_sel_ID, branch_base_sel_ID, lsu_we_ID, lsu_sign_extend_ID, data_width_ID, pc0_EX, pc4_EX, rd_EX, alu_operation_EX, regfile_we_EX, alu_a_sel_EX, alu_b_sel_EX, immediate_EX, rs1_data_EX, rs2_data_EX, branch_condition_EX, rd_data_sel_EX, branch_base_sel_EX, lsu_we_EX, lsu_sign_extend_EX, data_width_EX, invalid_EX);
-    logic invalid_EX;
+    pipeline_register_ID_EX pr_ID_EX (clk, branch_taken | invalid_ID | rst, stall, stall, pc0_ID, pc4_ID, rd_ID, alu_operation_ID, regfile_we_ID, alu_a_sel_ID, alu_b_sel_ID, immediate_ID, rs1_data_ID, rs2_data_ID, branch_condition_ID, rd_data_sel_ID, branch_base_sel_ID, lsu_we_ID, lsu_sign_extend_ID, data_width_ID, pc0_EX, pc4_EX, rd_EX, alu_operation_EX, regfile_we_EX, alu_a_sel_EX, alu_b_sel_EX, immediate_EX, rs1_data_EX, rs2_data_EX, branch_condition_EX, rd_data_sel_EX, branch_base_sel_EX, lsu_we_EX, lsu_sign_extend_EX, data_width_EX, invalid_EX, stalled_EX);
+    logic invalid_EX, stalled_EX;
     integer pc0_EX, pc4_EX;
     logic [3:0] rd_EX, alu_operation_EX;
     logic regfile_we_EX, alu_a_sel_EX, alu_b_sel_EX;
@@ -71,8 +76,8 @@ module topaz_geyser_core(
     integer branch_addr;
     
     // PIPELINE WALL COMMENT -- EX-MEMPREP BOUNDARY
-    pipeline_register_EX_MEMPREP pr_EX_MEMPREP (clk, branch_taken | invalid_EX | rst, pc4_EX, rd_EX, alu_result_EX, regfile_we_EX, rd_data_sel_EX, lsu_we_EX, lsu_sign_extend_EX, data_width_EX, rs2_data_EX, immediate_EX, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, lsu_we_MEMPREP, lsu_sign_extend_MEMPREP, data_width_MEMPREP, rs2_data_MEMPREP, immediate_MEMPREP, invalid_MEMPREP);
-    logic invalid_MEMPREP;
+    pipeline_register_EX_MEMPREP pr_EX_MEMPREP (clk, branch_taken | invalid_EX | rst, stalled_EX, pc4_EX, rd_EX, alu_result_EX, regfile_we_EX, rd_data_sel_EX, lsu_we_EX, lsu_sign_extend_EX, data_width_EX, rs2_data_EX, immediate_EX, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, lsu_we_MEMPREP, lsu_sign_extend_MEMPREP, data_width_MEMPREP, rs2_data_MEMPREP, immediate_MEMPREP, invalid_MEMPREP, stalled_MEMPREP);
+    logic invalid_MEMPREP, stalled_MEMPREP;
     integer pc4_MEMPREP;
     logic [3:0] rd_MEMPREP;
     integer alu_result_MEMPREP;
@@ -85,7 +90,18 @@ module topaz_geyser_core(
     
     // MEMPREP-STAGE
     // sign extend only affects reads
-    load_store_unit lsu (clk, lsu_we_MEMPREP, rst, lsu_sign_extend_WB, data_width_WB, rs2_data_MEMPREP, alu_result_WB, alu_result_MEMPREP, seven_segment_value, spi_csr, spi_trigger, spi_command, spi_response, dtcm_we_MEMPREP, dtcm_read_data_WB, itcm_we_MEMPREP, itcm_read_data_WB, lsu_read_data_WB);
+    
+    logic sram_flag;
+    always_comb begin
+        if (alu_result_WB >= 32'h9000 && alu_result_WB <= 32'h28FFF && rd_data_sel_WB == `RD_DATA_SEL_LSU) begin
+            sram_flag = 1'b1;
+        end
+        else begin
+            sram_flag = 1'b0;
+        end
+    end
+    
+    load_store_unit lsu (clk, lsu_we_MEMPREP, rst, lsu_sign_extend_WB, data_width_WB, rs2_data_MEMPREP, alu_result_WB, alu_result_MEMPREP, (rd_data_sel_MEMPREP == `RD_DATA_SEL_LSU), sram_flag, seven_segment_value, spi_csr, spi_trigger, spi_command, spi_response, dtcm_we_MEMPREP, dtcm_read_data_WB, itcm_we_MEMPREP, itcm_read_data_WB, sram_busy, sram_trigger, sram_read_data, lsu_read_data_WB);
     logic dtcm_we_MEMPREP;
     integer lsu_read_data_WB;
     single_port_memory_group dtcm (clk, dtcm_we_MEMPREP, data_width_MEMPREP, alu_result_MEMPREP - 32'h1000, rs2_data_MEMPREP, dtcm_read_data_WB);
@@ -95,13 +111,18 @@ module topaz_geyser_core(
     logic spi_trigger;
     wire [7:0] spi_command;
     wire [7:0] spi_response;
-    spi_controller spi(clk_SPI, rst, spi_trigger, spi_miso, spi_mosi, spi_sck, spi_csr[2], spi_csr[1], spi_csr[0], spi_command, spi_response);
+    spi_controller spi(clk_SPI, rst, spi_trigger, spi_miso, spi_mosi, spi_sck, /*spi_csr[2], spi_csr[1],*/ spi_csr[0], spi_command, spi_response);
     wire [7:0] spi_csr;
     assign spi_cs = spi_csr[3];
     
+    logic sram_trigger;
+    sram_controller sram(clk_SRAM, rst, lsu_we_MEMEX, sram_trigger, alu_result_MEMEX - 32'h9000, rs2_data_MEMEX, sram_read_data, sram_busy, ic_we, ic_io, ic_addr);
+    logic [7:0] sram_read_data;
+    logic sram_busy;
+    
     // PIPELINE WALL COMMENT -- MEMPREP-MEMEX BOUNDARY
-    pipeline_register_MEMPREP_MEMEX pr_MEMPREP_MEMEX (clk, invalid_MEMPREP | rst, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, lsu_sign_extend_MEMPREP, data_width_MEMPREP, immediate_MEMPREP, itcm_we_MEMPREP, rs2_data_MEMPREP, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, lsu_sign_extend_MEMEX, data_width_MEMEX, immediate_MEMEX, itcm_we_MEMEX, rs2_data_MEMEX, invalid_MEMEX);
-    logic invalid_MEMEX;
+    pipeline_register_MEMPREP_MEMEX pr_MEMPREP_MEMEX (clk, invalid_MEMPREP | rst, stalled_MEMPREP, pc4_MEMPREP, rd_MEMPREP, alu_result_MEMPREP, regfile_we_MEMPREP, rd_data_sel_MEMPREP, lsu_sign_extend_MEMPREP, data_width_MEMPREP, immediate_MEMPREP, itcm_we_MEMPREP, rs2_data_MEMPREP, lsu_we_MEMPREP, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, lsu_sign_extend_MEMEX, data_width_MEMEX, immediate_MEMEX, itcm_we_MEMEX, rs2_data_MEMEX, lsu_we_MEMEX, invalid_MEMEX, stalled_MEMEX);
+    logic invalid_MEMEX, stalled_MEMEX;
     integer pc4_MEMEX;
     logic [3:0] rd_MEMEX;
     integer alu_result_MEMEX;
@@ -115,8 +136,8 @@ module topaz_geyser_core(
     // MEMEX-STAGE
     
     // PIPELINE WALL COMMENT -- MEMEX-WB BOUNDARY
-    pipeline_register_MEMEX_WB pr_MEMEX_WB (clk, invalid_MEMEX | rst, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, lsu_sign_extend_MEMEX, data_width_MEMEX, immediate_MEMEX, pc4_WB, rd_WB, alu_result_WB, regfile_we_WB, rd_data_sel_WB, lsu_sign_extend_WB, data_width_WB, immediate_WB, invalid_WB);
-    logic invalid_WB;
+    pipeline_register_MEMEX_WB pr_MEMEX_WB (clk, invalid_MEMEX | rst, stalled_MEMEX, pc4_MEMEX, rd_MEMEX, alu_result_MEMEX, regfile_we_MEMEX, rd_data_sel_MEMEX, lsu_sign_extend_MEMEX, data_width_MEMEX, immediate_MEMEX, pc4_WB, rd_WB, alu_result_WB, regfile_we_WB, rd_data_sel_WB, lsu_sign_extend_WB, data_width_WB, immediate_WB, invalid_WB, stalled_WB);
+    logic invalid_WB, stalled_WB;
     integer pc4_WB;
     logic [3:0] rd_WB;
     integer alu_result_WB;
@@ -130,7 +151,7 @@ module topaz_geyser_core(
     integer rd_data_WB;
     
     always_comb begin
-        logic should_stall = (lsu_we_EX & (alu_result_EX == 32'h800)) | (lsu_we_MEMPREP & (alu_result_MEMPREP == 32'h800)) | spi_trigger | spi_csr[0] | ~branch_taken & ((~rs1_data_forwarded & (((rs1 == rd_EX) & regfile_we_EX & ~invalid_EX) | ((rs1 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP) | ((rs1 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX) | ((rs1 == rd_WB) & regfile_we_WB & ~invalid_WB))) | (~rs2_data_forwarded & (((rs2 == rd_EX) & regfile_we_EX & ~invalid_EX) | ((rs2 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP) | ((rs2 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX) | ((rs2 == rd_WB) & regfile_we_WB & ~invalid_WB))));
+        automatic logic should_stall = sram_busy | sram_trigger | (lsu_we_EX & (alu_result_EX == 32'h800)) | (lsu_we_MEMPREP & (alu_result_MEMPREP == 32'h800)) | spi_trigger | spi_csr[0] | ~branch_taken & ((~rs1_data_forwarded & (((rs1 == rd_EX) & regfile_we_EX & ~invalid_EX & ~stalled_EX) | ((rs1 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP & ~stalled_MEMPREP) | ((rs1 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX & ~stalled_MEMEX) | ((rs1 == rd_WB) & regfile_we_WB & ~invalid_WB & ~stalled_WB))) | (~rs2_data_forwarded & (((rs2 == rd_EX) & regfile_we_EX & ~invalid_EX & ~ stalled_EX) | ((rs2 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP & ~stalled_MEMPREP) | ((rs2 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX & ~stalled_MEMEX) | ((rs2 == rd_WB) & regfile_we_WB & ~invalid_WB & ~stalled_WB))));
         case (should_stall)
         1: stall = 1;
         0: stall = 0;

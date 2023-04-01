@@ -6,7 +6,7 @@ module spi_controller (
     input logic miso,
     output logic mosi, sck,
 
-    input logic pol, pha,
+    /*input logic pol, pha,*/
     output logic busy,
 
     input logic [7:0] tx_data,
@@ -24,7 +24,7 @@ assign mosi = tx_data[index];
 function void reset();
     state <= IDLE;
     index <= 3'd7;
-    sck <= pol;
+    sck <= 1'b0;
 endfunction
 
 always_ff @ (posedge clk) begin
@@ -35,7 +35,6 @@ always_ff @ (posedge clk) begin
     case (state)
     IDLE: begin
         if (trigger) begin
-            if (pha) sck <= ~sck;
             state <= TRANSFER;
         end
     end
@@ -47,12 +46,12 @@ always_ff @ (posedge clk) begin
     end
 
     TIMING: begin
+        index <= index - 1;
+        sck <= ~sck;
         if (index == 0) begin
             reset();
         end
         else begin
-            sck <= ~sck;
-            index <= index - 1;
             state <= TRANSFER;
         end
     end

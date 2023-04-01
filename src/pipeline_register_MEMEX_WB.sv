@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module pipeline_register_MEMEX_WB(
-    input logic clk, invalid_MEMEX,
+    input logic clk, invalid_MEMEX, stalled_MEMEX,
     input integer pc4_MEMEX,
     input logic [3:0] rd_MEMEX,
     input integer alu_result_MEMEX,
@@ -19,10 +19,11 @@ module pipeline_register_MEMEX_WB(
     output logic lsu_sign_extend_WB,
     output logic [1:0] data_width_WB,
     output integer immediate_WB,
-    output logic invalid_WB
+    output logic invalid_WB, stalled_WB
     );
     
     always @ (posedge clk) begin
+        stalled_WB <= stalled_MEMEX;
         invalid_WB <= invalid_MEMEX;
         pc4_WB <= pc4_MEMEX;
         rd_WB <= rd_MEMEX;

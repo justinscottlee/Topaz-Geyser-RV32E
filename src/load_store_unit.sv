@@ -7,6 +7,7 @@ module load_store_unit(
     input integer write_data,
     input integer addr_read,
     input integer addr_write,
+    input logic is_load_store, sram_flag,
     
     // CSR
     
@@ -27,6 +28,11 @@ module load_store_unit(
     output logic itcm_we,
     input integer itcm_read_data,
     
+    // SRAM
+    input logic sram_busy,
+    output logic sram_trigger,
+    input byte sram_read_data,
+    
     output integer read_data
     );
     
@@ -39,10 +45,7 @@ module load_store_unit(
             internal_spi_csr[2] <= 1'b1; // SPI_CS
             seven_segment_value <= 32'd0;
             spi_trigger <= 1'b0;
-        end
-        
-        if (spi_csr[0]) begin
-            spi_trigger <= 1'b0;
+            sram_trigger <= 1'b0;
         end
         
         if (we) begin
@@ -62,6 +65,24 @@ module load_store_unit(
                 end
             end
             endcase
+        end
+        
+        if (we | is_load_store) begin
+            case (addr_write) inside
+            [32'h9000:32'h28FFF]: begin
+                if (~sram_flag) begin
+                    sram_trigger <= 1'b1;
+                end
+            end
+            endcase
+        end
+        
+        if (spi_csr[0]) begin
+            spi_trigger <= 1'b0;
+        end
+        
+        if (sram_busy) begin
+            sram_trigger <= 1'b0;
         end
     end
     
@@ -97,6 +118,9 @@ module load_store_unit(
         end
         [32'h5000:32'h8FFF]: begin // instruction TCM
             read_data = itcm_read_data;
+        end
+        [32'h9000:32'h28FFF]: begin // SRAM
+            read_data = sram_read_data;
         end
         endcase
         

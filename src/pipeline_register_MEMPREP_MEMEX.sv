@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module pipeline_register_MEMPREP_MEMEX(
-    input logic clk, invalid_MEMPREP,
+    input logic clk, invalid_MEMPREP, stalled_MEMPREP,
     input integer pc4_MEMPREP,
     input logic [3:0] rd_MEMPREP,
     input integer alu_result_MEMPREP,
@@ -12,6 +12,7 @@ module pipeline_register_MEMPREP_MEMEX(
     input integer immediate_MEMPREP,
     input logic itcm_we_MEMPREP,
     input integer rs2_data_MEMPREP,
+    input logic lsu_we_MEMPREP,
     
     output integer pc4_MEMEX,
     output logic [3:0] rd_MEMEX,
@@ -23,10 +24,12 @@ module pipeline_register_MEMPREP_MEMEX(
     output integer immediate_MEMEX,
     output logic itcm_we_MEMEX,
     output integer rs2_data_MEMEX,
-    output logic invalid_MEMEX
+    output logic lsu_we_MEMEX,
+    output logic invalid_MEMEX, stalled_MEMEX
     );
     
     always @ (posedge clk) begin
+        stalled_MEMEX <= stalled_MEMPREP;
         invalid_MEMEX <= invalid_MEMPREP;
         pc4_MEMEX <= pc4_MEMPREP;
         rd_MEMEX <= rd_MEMPREP;
@@ -38,6 +41,7 @@ module pipeline_register_MEMPREP_MEMEX(
         immediate_MEMEX <= immediate_MEMPREP;
         itcm_we_MEMEX <= itcm_we_MEMPREP;
         rs2_data_MEMEX <= rs2_data_MEMPREP;
+        lsu_we_MEMEX <= lsu_we_MEMPREP;
         
         if (invalid_MEMPREP) begin
             regfile_we_MEMEX <= 1'b0;

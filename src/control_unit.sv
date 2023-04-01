@@ -143,7 +143,7 @@ module control_unit(
     end
     `OPCODE_OP_IMM: begin
         immediate = imm_I;
-        alu_operation = {(funct3 == `FUNCT3_SRAI) ? funct7[5] : 1'b0, funct3};
+        alu_operation = {(funct3 == `FUNCT3_SRLI_SRAI) ? funct7[5] : 1'b0, funct3};
         alu_a_sel = `ALU_A_SEL_RS1;
         alu_b_sel = `ALU_B_SEL_IMM;
         regfile_we = 1'b1;
@@ -169,7 +169,7 @@ module control_unit(
         `FUNCT3_SLLI: begin
             
         end
-        `FUNCT3_SRLI, `FUNCT3_SRAI: begin
+        `FUNCT3_SRLI_SRAI: begin
             case (funct7)
             `FUNCT7_SRLI: begin
                 
@@ -187,7 +187,7 @@ module control_unit(
         alu_b_sel = `ALU_B_SEL_RS2;
         regfile_we = 1'b1;
         case (funct3)
-        `FUNCT3_ADD, `FUNCT3_SUB: begin
+        `FUNCT3_ADD_SUB: begin
             case (funct7)
             `FUNCT7_ADD: begin
                 
@@ -209,7 +209,7 @@ module control_unit(
         `FUNCT3_XOR: begin
             
         end
-        `FUNCT3_SRL, `FUNCT3_SRA: begin
+        `FUNCT3_SRL_SRA: begin
             case (funct7)
             `FUNCT7_SRL: begin
                 
