@@ -1,7 +1,9 @@
 `timescale 1ns / 1ps
 
 module load_store_unit(
-    input logic clk, we, rst,
+    input logic clk, 
+    input logic [15:0] switch_input,
+    input logic we, rst,
     input logic sign_extend,
     input logic [1:0] data_width,
     input integer write_data,
@@ -52,7 +54,9 @@ module load_store_unit(
             case (addr_write) inside
             [32'h0000:32'hFFF]: begin // CSR
                 if (addr_write == 32'h800) begin // SPI_COMMAND
-                    spi_command <= write_data;
+                    if (~spi_trigger & ~spi_csr[0]) begin
+                        spi_command <= write_data;
+                    end
                     spi_trigger <= 1'b1;
                 end
                 
@@ -108,6 +112,9 @@ module load_store_unit(
             end
             else if (addr_read == 32'h801) begin
                 read_data = spi_csr;
+            end
+            else if (addr_read == 32'h803) begin
+                read_data = switch_input;
             end
             else if (addr_read == 32'h804) begin
                 read_data = seven_segment_value;

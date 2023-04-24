@@ -13,8 +13,14 @@ module topaz_geyser_core(
     // SRAM
     output logic ic_we,
     inout logic [7:0] ic_io,
-    output logic [16:0] ic_addr
+    output logic [16:0] ic_addr,
+    
+    input logic [15:0] switch_input
     );
+    
+    logic ic_we;
+    wire [7:0] ic_io;
+    logic [16:0] ic_addr;
     
     logic clk, clk_SPI, clk_SRAM;
     clk_wiz_0 clk_wiz (.clk_100M(sys_clk), .locked(locked), .clk_CORE(clk), .clk_SPI(clk_SPI), .clk_SRAM(clk_SRAM));
@@ -101,7 +107,7 @@ module topaz_geyser_core(
         end
     end
     
-    load_store_unit lsu (clk, lsu_we_MEMPREP, rst, lsu_sign_extend_WB, data_width_WB, rs2_data_MEMPREP, alu_result_WB, alu_result_MEMPREP, (rd_data_sel_MEMPREP == `RD_DATA_SEL_LSU), sram_flag, seven_segment_value, spi_csr, spi_trigger, spi_command, spi_response, dtcm_we_MEMPREP, dtcm_read_data_WB, itcm_we_MEMPREP, itcm_read_data_WB, sram_busy, sram_trigger, sram_read_data, lsu_read_data_WB);
+    load_store_unit lsu (clk, switch_input, lsu_we_MEMPREP, rst, lsu_sign_extend_WB, data_width_WB, rs2_data_MEMPREP, alu_result_WB, alu_result_MEMPREP, (rd_data_sel_MEMPREP == `RD_DATA_SEL_LSU), sram_flag, seven_segment_value, spi_csr, spi_trigger, spi_command, spi_response, dtcm_we_MEMPREP, dtcm_read_data_WB, itcm_we_MEMPREP, itcm_read_data_WB, sram_busy, sram_trigger, sram_read_data, lsu_read_data_WB);
     logic dtcm_we_MEMPREP;
     integer lsu_read_data_WB;
     single_port_memory_group dtcm (clk, dtcm_we_MEMPREP, data_width_MEMPREP, alu_result_MEMPREP - 32'h1000, rs2_data_MEMPREP, dtcm_read_data_WB);
@@ -151,7 +157,7 @@ module topaz_geyser_core(
     integer rd_data_WB;
     
     always_comb begin
-        automatic logic should_stall = sram_busy | sram_trigger | (lsu_we_EX & (alu_result_EX == 32'h800)) | (lsu_we_MEMPREP & (alu_result_MEMPREP == 32'h800)) | spi_trigger | spi_csr[0] | ~branch_taken & ((~rs1_data_forwarded & (((rs1 == rd_EX) & regfile_we_EX & ~invalid_EX & ~stalled_EX) | ((rs1 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP & ~stalled_MEMPREP) | ((rs1 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX & ~stalled_MEMEX) | ((rs1 == rd_WB) & regfile_we_WB & ~invalid_WB & ~stalled_WB))) | (~rs2_data_forwarded & (((rs2 == rd_EX) & regfile_we_EX & ~invalid_EX & ~ stalled_EX) | ((rs2 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP & ~stalled_MEMPREP) | ((rs2 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX & ~stalled_MEMEX) | ((rs2 == rd_WB) & regfile_we_WB & ~invalid_WB & ~stalled_WB))));
+        automatic logic should_stall = sram_busy | sram_trigger | spi_trigger | spi_csr[0] | ~branch_taken & ((~rs1_data_forwarded & (((rs1 == rd_EX) & regfile_we_EX & ~invalid_EX & ~stalled_EX) | ((rs1 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP & ~stalled_MEMPREP) | ((rs1 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX & ~stalled_MEMEX) | ((rs1 == rd_WB) & regfile_we_WB & ~invalid_WB & ~stalled_WB))) | (~rs2_data_forwarded & (((rs2 == rd_EX) & regfile_we_EX & ~invalid_EX & ~ stalled_EX) | ((rs2 == rd_MEMPREP) & regfile_we_MEMPREP & ~invalid_MEMPREP & ~stalled_MEMPREP) | ((rs2 == rd_MEMEX) & regfile_we_MEMEX & ~invalid_MEMEX & ~stalled_MEMEX) | ((rs2 == rd_WB) & regfile_we_WB & ~invalid_WB & ~stalled_WB))));
         case (should_stall)
         1: stall = 1;
         0: stall = 0;

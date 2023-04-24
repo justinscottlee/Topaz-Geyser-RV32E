@@ -40,13 +40,13 @@ always_ff @ (posedge clk) begin
     end
 
     TRANSFER: begin
-        rx_data[index] <= miso;
         sck <= ~sck;
         state <= TIMING;
     end
 
     TIMING: begin
-        index <= index - 1;
+        rx_data[index] <= miso;
+        index <= index - 1; 
         sck <= ~sck;
         if (index == 0) begin
             reset();
